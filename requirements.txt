@@ -1,0 +1,2 @@
+# Pinned so a CI build and a local build produce the same site.
+mkdocs-material==9.5.44

@@ -1,75 +1,90 @@
----
-description: >-
-  Genifi is a cross-border payment rail. You send a stablecoin amount; your
-  recipient is paid in their local currency.
----
+# genifi-docs
 
-# Genifi Documentation
+Public documentation for the Genifi cross-border payment rail — the API and the
+dashboard.
 
-Genifi moves value across borders for regulated businesses. Value travels as a
-stablecoin and lands as **local fiat**, disbursed by a licensed partner in the
-destination country. The recipient never holds, receives, or needs to know about
-a stablecoin.
+**Live site:** https://docs.genifi.com
 
-You keep the relationship with your end users and you own their KYC. Genifi
-verifies you, and provides the corridor.
+Built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) and
+deployed to GitHub Pages on every push to `main`.
 
-## Two ways to use it
+## Layout
 
-<table data-card-size="large" data-view="cards">
-  <thead><tr><th></th><th></th><th data-hidden data-card-target data-type="content-ref"></th></tr></thead>
-  <tbody>
-    <tr>
-      <td><strong>Backend API</strong></td>
-      <td>Integrate Genifi into your own systems. Quotes, payments, webhooks, and the full endpoint reference.</td>
-      <td><a href="backend/README.md">backend/README.md</a></td>
-    </tr>
-    <tr>
-      <td><strong>Dashboard</strong></td>
-      <td>Send and track payments from a web app. No code required.</td>
-      <td><a href="dashboard/README.md">dashboard/README.md</a></td>
-    </tr>
-  </tbody>
-</table>
+```
+docs/
+  README.md          Landing page
+  SUMMARY.md         GitBook nav (not part of the MkDocs build)
+  CNAME              Custom domain for GitHub Pages
+  backend/           API documentation — 24 pages
+  dashboard/         Dashboard guides — 14 pages
+mkdocs.yml           Site config and navigation
+requirements.txt     Pinned build dependencies
+```
 
-## Start here
+Navigation lives in the `nav:` block of `mkdocs.yml`. **Adding a page means
+adding the file and a `nav:` entry** — the build runs with `strict: true`, so an
+orphaned page or a broken internal link fails CI rather than shipping quietly.
 
-**Building an integration?** [Quickstart](backend/getting-started/quickstart.md)
-takes you from an API key to a settled payment in six steps. Then read
-[Idempotency](backend/concepts/idempotency.md) and
-[How a payment works](backend/concepts/payment-lifecycle.md) before you write
-production code — they cover the two things integrations most often get wrong.
+## Working on the docs
 
-**Using the dashboard?** [Signing in](dashboard/getting-started/signing-in.md),
-then [Send a payment](dashboard/guides/send-a-payment.md). Want to look around
-first, with no account? [Demo mode](dashboard/getting-started/demo-mode.md).
+```bash
+pip install -r requirements.txt
+mkdocs serve            # http://127.0.0.1:8000, live reload
+```
 
-## What to expect
+Before opening a PR:
 
-A few properties run through everything Genifi does. They explain choices that
-might otherwise look strange.
+```bash
+mkdocs build            # same strict build CI runs
+```
 
-**Money is never a JSON number.** You send decimal strings; we return integer
-minor units. A float cannot carry a six-decimal stablecoin amount without losing
-precision, and losing precision on money is not an acceptable failure mode.
-→ [Amounts and currencies](backend/concepts/money.md)
+Every pull request builds the site as a check. Merging to `main` deploys.
 
-**Retries are always safe.** Your idempotency key *is* the transaction ID. Send
-the same request ten times and there is one payment.
-→ [Idempotency](backend/concepts/idempotency.md)
+## Writing conventions
 
-**We fail closed and never fake success.** If we cannot tell whether funds moved,
-the payment is parked for reconciliation rather than optimistically marked
-complete. If a feature is not wired up on your environment, you get a `501` with
-a reason — not an empty list, not a plausible stub.
-→ [Environments](backend/getting-started/environments.md)
+Callouts use Material admonitions:
 
-**A payment is done when it is reconciled.** `Paid out` means the recipient has
-the money. `Reconciled` means the books, the chain, and the provider all agree.
-Tell your customer at the first; close your ledger at the second.
-→ [How a payment works](backend/concepts/payment-lifecycle.md)
+```markdown
+!!! warning
 
-**The recipient always receives local fiat.** In several destination markets,
-using a stablecoin as a means of payment is prohibited. The stablecoin leg stays
-offshore, always.
-→ [Corridors](backend/concepts/corridors.md)
+    Rotating a key invalidates the old one immediately.
+```
+
+Request/response pairs use content tabs:
+
+````markdown
+=== "Request"
+
+    ```bash
+    curl "$GENIFI_API/health"
+    ```
+
+=== "200 OK"
+
+    ```json
+    { "status": "ok" }
+    ```
+````
+
+Link between pages with relative paths including the `.md` extension
+(`../concepts/money.md`) so the strict build can verify them.
+
+## Keeping it accurate
+
+These pages are written against the real API contract, not summarised from
+prose. The things most likely to drift:
+
+| If this changes | Update |
+|---|---|
+| Currency scales | `docs/backend/concepts/money.md` |
+| Corridor list | `docs/backend/concepts/corridors.md` |
+| Rate-limit defaults | `docs/backend/reference/rate-limits.md` |
+| Role permissions | `docs/backend/getting-started/authentication.md`, `docs/dashboard/guides/team-and-roles.md` |
+| Webhook events | `docs/backend/webhooks/events.md`, `docs/backend/api/notifications.md` |
+| An endpoint leaving `501` | `docs/backend/api/wallets-and-accounts.md`, `docs/dashboard/reference/feature-availability.md` |
+
+## GitBook
+
+`.gitbook.yaml` points at `docs/`, so the GitBook space can stay in sync off the
+same files. It is a fallback, not the published site — `docs.genifi.com` is
+served by GitHub Pages.
