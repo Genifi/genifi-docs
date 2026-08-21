@@ -1,0 +1,10 @@
+# GitBook Git Sync configuration.
+#
+# One space, one sidebar, two top-level groups (Backend API and Dashboard),
+# defined in SUMMARY.md. This file must live at the root of the synced
+# repository/branch.
+root: ./
+
+structure:
+  readme: README.md
+  summary: SUMMARY.md

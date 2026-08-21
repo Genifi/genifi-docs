@@ -1,0 +1,46 @@
+# Table of contents
+
+* [Genifi Documentation](README.md)
+
+## Backend API
+
+* [Overview](backend/README.md)
+* [Quickstart](backend/getting-started/quickstart.md)
+* [Authentication](backend/getting-started/authentication.md)
+* [Environments](backend/getting-started/environments.md)
+* [How a payment works](backend/concepts/payment-lifecycle.md)
+* [Amounts and currencies](backend/concepts/money.md)
+* [Corridors](backend/concepts/corridors.md)
+* [Idempotency](backend/concepts/idempotency.md)
+* [API conventions](backend/api/conventions.md)
+  * [Discovery](backend/api/discovery.md)
+  * [Quotes](backend/api/quotes.md)
+  * [Payments](backend/api/transactions.md)
+  * [Wallets and accounts](backend/api/wallets-and-accounts.md)
+  * [Treasury](backend/api/treasury.md)
+  * [Recipients](backend/api/recipients.md)
+  * [Team and API keys](backend/api/team.md)
+  * [Statements](backend/api/statements.md)
+  * [Notifications](backend/api/notifications.md)
+* [Webhooks](backend/webhooks/README.md)
+  * [Event types](backend/webhooks/events.md)
+  * [Verifying signatures](backend/webhooks/verifying.md)
+* [Errors](backend/reference/errors.md)
+* [Rate limits](backend/reference/rate-limits.md)
+
+## Dashboard
+
+* [Overview](dashboard/README.md)
+* [Signing in](dashboard/getting-started/signing-in.md)
+* [A tour of the dashboard](dashboard/getting-started/tour.md)
+* [Demo mode](dashboard/getting-started/demo-mode.md)
+* [Send a payment](dashboard/guides/send-a-payment.md)
+* [Track transactions](dashboard/guides/track-transactions.md)
+* [Wallets and funding](dashboard/guides/wallets-and-funding.md)
+* [The address book](dashboard/guides/address-book.md)
+* [API keys and webhooks](dashboard/guides/api-keys-and-webhooks.md)
+* [Your team](dashboard/guides/team-and-roles.md)
+* [Email notifications](dashboard/guides/notifications.md)
+* [Exports and receipts](dashboard/guides/exports-and-receipts.md)
+* [What's available](dashboard/reference/feature-availability.md)
+* [Troubleshooting](dashboard/reference/troubleshooting.md)
