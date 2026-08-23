@@ -2,7 +2,7 @@ site_name: Genifi Documentation
 site_description: >-
   Genifi is a cross-border payment rail. You send a stablecoin amount; your
   recipient is paid in their local currency.
-site_url: https://docs.genifi.com
+site_url: https://docs.genifi.io
 repo_url: https://github.com/Genifi/genifi-docs
 repo_name: Genifi/genifi-docs
 edit_uri: edit/main/docs/

@@ -3,7 +3,7 @@
 Public documentation for the Genifi cross-border payment rail — the API and the
 dashboard.
 
-**Live site:** https://docs.genifi.com
+**Live site:** https://docs.genifi.io
 
 Built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) and
 deployed to GitHub Pages on every push to `main`.
@@ -86,5 +86,5 @@ prose. The things most likely to drift:
 ## GitBook
 
 `.gitbook.yaml` points at `docs/`, so the GitBook space can stay in sync off the
-same files. It is a fallback, not the published site — `docs.genifi.com` is
+same files. It is a fallback, not the published site — `docs.genifi.io` is
 served by GitHub Pages.
