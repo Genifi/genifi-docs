@@ -1,9 +1,8 @@
 # GitBook Git Sync configuration.
 #
-# One space, one sidebar, two top-level groups (Backend API and Dashboard),
-# defined in SUMMARY.md. This file must live at the root of the synced
-# repository/branch.
-root: ./
+# Kept alongside the MkDocs build so the GitBook space keeps working as a
+# fallback. Both toolchains read the same files under docs/.
+root: ./docs
 
 structure:
   readme: README.md
