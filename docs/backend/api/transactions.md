@@ -239,13 +239,35 @@ Your organization's payment history.
           "createdAt": "2026-08-21T14:02:07.000Z"
         }
       ],
-      "count": 1
+      "count": 1,
+      "nextCursor": "eyJ0IjoiMjAyNi0wOC0yMVQxNDowMjowNy4wMDBaIn0",
+      "hasMore": true
     }
     ```
 
 | Query | Type | Notes |
 |---|---|---|
-| `limit` | integer | Positive, maximum 500 |
+| `limit` | integer | Positive, maximum 500. Rows per page |
+| `cursor` | string | `nextCursor` from the previous page. Omit for the first |
+
+| Field | Notes |
+|---|---|
+| `count` | Rows on **this page**. Not a total |
+| `nextCursor` | Cursor for the next page, or `null` at the end of the list |
+| `hasMore` | Whether another page exists |
+
+Page through your history by sending `nextCursor` back as `?cursor=` until it
+comes back `null`:
+
+```bash
+curl "$GENIFI_API/transactions?limit=50&cursor=$CURSOR" \
+  -H "Authorization: Bearer $GENIFI_API_KEY"
+```
+
+The cursor is opaque and keyset-based, so payments you initiate while paging
+land above your current position and cannot make a page repeat or skip rows. See
+[Pagination](conventions.md#pagination) for the full contract, including the
+`400 invalid_cursor` response.
 
 This is a record of what was **initiated** — never a balance and never a live
 state. It exists so you can enumerate your payments; call

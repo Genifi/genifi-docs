@@ -99,8 +99,48 @@ cannot prove it.
 
 ## Pagination
 
-`GET /transactions` accepts `?limit=` (a positive integer, maximum 500). Other
-list endpoints return the full set with a `count`:
+The two lists that grow without bound — `GET /transactions` and
+`GET /treasury/onramps` — are paginated with an opaque **cursor**. Both accept
+`?limit=` (a positive integer, maximum 500) and `?cursor=`, and both return a
+`nextCursor` alongside the rows:
+
+```json
+{
+  "transactions": [ … ],
+  "count": 50,
+  "nextCursor": "eyJ0IjoiMjAyNi0wOC0yMVQxNDowMjowNy4wMDBaIn0",
+  "hasMore": true
+}
+```
+
+To walk a list, send `nextCursor` back as `?cursor=` and repeat until it comes
+back `null`. That `null` is the end of the list — the only end-of-list signal.
+
+```bash
+curl "$GENIFI_API/transactions?limit=50&cursor=$CURSOR" \
+  -H "Authorization: Bearer $GENIFI_API_KEY"
+```
+
+A few properties worth relying on:
+
+- **`count` is the page, not the total.** It is the number of rows in the
+  response you are holding. We do not return a total row count.
+- **`hasMore` is authoritative.** A page that comes back exactly `limit` rows
+  long is not evidence that another page exists; only `hasMore` / a non-null
+  `nextCursor` is.
+- **A cursor is opaque.** It encodes the sort position of the last row we sent.
+  Echo it back unchanged; do not construct, parse, or modify one. A cursor we
+  did not issue is rejected with `400 invalid_cursor` — never a silently empty
+  page, which you would otherwise read as the end of your history.
+- **Cursors are stable under writes.** These lists are newest-first over
+  append-only records, so new rows arrive at the *top*. A cursor names a row
+  rather than counting from the top, so a payment initiated (or a wire that
+  lands) while you are paging cannot make a page repeat rows or skip them. This
+  is why there is no `offset`.
+
+Other list endpoints — `/recipients`, `/members`, `/wallets`,
+`/banking/accounts`, `/issuers/accounts` — are bounded per organization and
+return the full set with a `count`:
 
 ```json
 { "accounts": [ … ], "count": 3 }
