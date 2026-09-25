@@ -109,7 +109,12 @@ X-Genifi-Event: transaction.reconciled
   "transactionId": "pay-2026-08-21-0001",
   "data": {
     "state": "RECONCILED",
-    "receiveAmount": { "amount": "24512750", "currency": "VND" }
+    "sendAmount": { "amount": "100000", "currency": "USD", "scale": 2 },
+    "receiveAmount": { "amount": "24512750", "currency": "VND", "scale": 0 },
+    "corridor": { "from": "USD", "to": "VND", "destinationCountry": "VN" },
+    "occurredAt": "2026-08-21T09:14:02.000Z",
+    "provider": "tazapay",
+    "payoutMode": "regular"
   }
 }
 ```

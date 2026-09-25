@@ -139,8 +139,8 @@ A few properties worth relying on:
   is why there is no `offset`.
 
 Other list endpoints — `/recipients`, `/members`, `/wallets`,
-`/banking/accounts`, `/issuers/accounts` — are bounded per organization and
-return the full set with a `count`:
+`/issuers/accounts` — are bounded per organization and return the full set with a
+`count`:
 
 ```json
 { "accounts": [ … ], "count": 3 }

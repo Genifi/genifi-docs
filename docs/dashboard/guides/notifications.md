@@ -20,6 +20,33 @@ If you have never changed your preferences, you are subscribed to the important
 transitions only. The chatty intermediate ones are opt-in, so nobody gets flooded
 on their first day.
 
+## What an email contains
+
+Every notification is built so you can act on it without opening the dashboard:
+
+- **The subject** leads with the status and the amounts and **ends with your
+  transaction id** — the string you paste into a search box.
+  `Genifi · Paid out · 1,000.00 USD → 24,512,750 VND · pay-2026-08-21-0001`
+- **The amounts**, grouped: what you sent, and what the recipient receives.
+- **The details**: transaction id, corridor, payout provider, payout mode, state,
+  and the time **this** transition happened, always in UTC.
+- **What to do next** — one line per event. "Paid out" and "Reconciled" mean very
+  different things to a ledger, and the email says which is which.
+- **View transaction** — a link straight to that payment in the dashboard.
+
+A field we do not have is left out rather than shown as a placeholder, so nothing
+in the email is ever a guess.
+
+Emails from a non-production environment are badged **TEST MODE** in the subject
+and at the top of the message. Never action one as a real payment.
+
+Nothing in the email loads from the network — no images, no fonts, no trackers —
+so it renders the same behind a locked-down mail gateway, and there is a full
+plain-text version for clients that strip HTML.
+
+We never put recipient details in an email. Amounts, corridor, provider and ids
+only — never a beneficiary's name, account, or address.
+
 ## Choosing
 
 Tick the events you want and save. Untick everything to stop all email.

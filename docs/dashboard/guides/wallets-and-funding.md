@@ -47,15 +47,24 @@ How value gets into a wallet depends on your arrangement:
 
 * **Transfer in directly** — send the stablecoin to the wallet's on-chain
   address, shown on the wallet's detail.
-* **On-ramp fiat** — wire fiat and have it delivered as a stablecoin to that
-  address. Your engineers can start one through the API; the bank details and the
-  **reference to quote** come back with it.
+* **On-ramp fiat** — wire USD or EUR and have it delivered as a stablecoin to
+  that address. **Deposits & withdrawals → Your deposit details** shows where to
+  send it: Genifi's bank details for each currency, and the **reference to
+  quote**, with a copy button on every field. The same details come back when you
+  start an on-ramp, through the dashboard or the API.
 
-!!! warning
+!!! warning "Always quote the reference"
 
-    When you wire fiat for an on-ramp, quote the reference **exactly**. That
-    reference is how the incoming wire is matched to the on-ramp it belongs to. A
-    wire without it arrives unattributed and needs manual reconciliation.
+    Every customer wires to the same Genifi account, so the reference is the only
+    thing that says the money is yours. A wire without it — or with a mangled one
+    — arrives unattributed and needs manual reconciliation; it is never matched on
+    amount alone.
+
+    One reference covers every currency: it identifies your organization, not the
+    transfer. But the **bank accounts are per currency and are not
+    interchangeable** — send USD to the USD account and EUR to the EUR one.
+
+    Your deposit details appear once your business verification is approved.
 
 ## Not enough in the wallet?
 
@@ -67,17 +76,25 @@ When balances are available, the payment form warns you before you spend a quote
 Where balances are not available, the backend is still the authority and the
 payment fails cleanly at the funding step, before value moves onward.
 
-## Mint accounts and custody accounts
+## Mint accounts, deposits and withdrawals
 
-Two more account types appear in the sidebar, both listed the same way:
+Two more pages appear in the sidebar:
 
 **Mint accounts** (`/dashboard/mint-accounts`) — issuer accounts used to convert
 between a stablecoin and fiat at par, rather than swapping on a market and paying
 slippage. Listing works everywhere; the mint and redeem actions need a provider
 connection.
 
-**Deposits & withdrawals** (`/dashboard/deposits`) — custody accounts where fiat
-arrives and leaves. Balances and wire actions need a banking connection.
+**Deposits & withdrawals** (`/dashboard/deposits`) — your deposit details, and
+every fiat deposit tracked through to delivered USDC. Withdrawals need a banking
+connection.
+
+!!! info "There is no bank account of your own to list here"
+
+    You never link a bank account to Genifi or to any provider — a compliance
+    decision, not a missing feature. Fiat reaches you through **Genifi's own
+    account**, which is what "Your deposit details" describes. So this page shows
+    where to send money and what has arrived, not a list of accounts you hold.
 
 Where an action is not available, the dashboard shows what it is and what it
 needs — see [What's available](../reference/feature-availability.md).

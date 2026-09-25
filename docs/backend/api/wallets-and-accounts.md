@@ -1,9 +1,17 @@
 # Wallets and accounts
 
 Genifi keeps a registry of the accounts your organization owns — the wallets it
-funds payments from, plus any custody and issuer accounts. Registration is what
-lets you name a wallet in a payment and lets us verify it is yours before moving
-anything.
+funds payments from, plus the issuer accounts we hold on your behalf.
+Registration is what lets you name a wallet in a payment and lets us verify it is
+yours before moving anything.
+
+!!! info "You do not link a bank account to Genifi"
+
+    There are no per-integrator custody or deposit bank accounts, and there will
+    not be. Fiat reaches you through **Genifi's own account**: you wire USD or EUR
+    to it quoting your reference, and it is on-ramped to USDC in your wallet. Where
+    to send it, and what to quote, is
+    [`GET /treasury/deposit-instructions`](treasury.md#get-treasurydeposit-instructions).
 
 ## Why balances are separate from listings
 
@@ -172,31 +180,40 @@ A `501` means no provider can answer at all. It is **not** the same as an empty
 balance list: "nothing is configured" and "this wallet holds nothing" are
 different answers and must not render identically.
 
-## Custody and issuer accounts
+## Issuer accounts
 
-Same shape, different `kind`:
+Same shape as a wallet listing, different `kind`:
 
 ```bash
-curl "$GENIFI_API/banking/accounts" -H "Authorization: Bearer $GENIFI_API_KEY"
 curl "$GENIFI_API/issuers/accounts" -H "Authorization: Bearer $GENIFI_API_KEY"
 ```
 
 Balances follow the same pattern and carry a `source`:
 
 ```bash
-curl "$GENIFI_API/banking/accounts/acc_5d20/balances" \
-  -H "Authorization: Bearer $GENIFI_API_KEY"
-
 curl "$GENIFI_API/issuers/iss_a1b2/balances" \
   -H "Authorization: Bearer $GENIFI_API_KEY"
 ```
 
 ```json
-{ "accountId": "acc_5d20", "balances": [ … ], "source": "provider_report" }
+{ "issuerId": "iss_a1b2", "balances": [ … ], "source": "provider_report" }
 ```
 
 `"source": "provider_report"` is the label doing the work. It is what the
 provider says, at `reportedAt`. It is not your balance of record.
+
+!!! warning "`GET /banking/accounts` has been removed"
+
+    `GET /banking/accounts` and `GET /banking/accounts/:id/balances` no longer
+    exist and return `404`. They listed "the custody accounts registered to your
+    integrator account" — a thing Genifi does not hold, for the compliance reason
+    above.
+
+    If you were calling them to find out where to send money, the answer is
+    [`GET /treasury/deposit-instructions`](treasury.md#get-treasurydeposit-instructions),
+    which returns the actual bank details and your reference. It is a better
+    answer than the old route ever gave: those rows carried no account number,
+    IBAN or reference at all.
 
 ## Issuer directory
 
@@ -224,7 +241,7 @@ speculatively.
 |---|---|
 | `POST /wallets/:walletId/transfers` | Move funds between wallets |
 | `POST /issuers/:issuerId/mint` | Mint at par |
-| `POST /banking/wire-transfers` | Send a wire from a custody account |
+| `POST /banking/wire-transfers` | Send an outbound wire (withdrawals) |
 
 Each returns a typed reason and a `requires` field:
 
@@ -232,7 +249,7 @@ Each returns a typed reason and a `requires` field:
 {
   "error": "not_implemented",
   "feature": "banking",
-  "message": "wire transfers need a custody bank adapter",
-  "requires": "a production banking partner"
+  "message": "wire transfers need a money-movement workflow",
+  "requires": "a wire workflow to replace the stub"
 }
 ```

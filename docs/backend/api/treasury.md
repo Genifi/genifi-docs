@@ -6,6 +6,116 @@ stablecoin, and converting a stablecoin holding back to fiat at par.
 Neither has a corridor or a recipient. Both are durable operations that return
 `202` and are polled for an outcome, exactly like a payment.
 
+Before either, one read: **where to send the money**.
+
+## GET /treasury/deposit-instructions
+
+Genifi's bank details and **your reference** — everything a payer needs to wire
+fiat in. Standing, so you can read it before starting anything.
+
+=== "Request"
+
+    ```bash
+    curl "$GENIFI_API/treasury/deposit-instructions" \
+      -H "Authorization: Bearer $GENIFI_API_KEY"
+    ```
+
+=== "200 OK"
+
+    ```json
+    {
+      "reference": "GEN-7K2QX4C9J",
+      "accounts": [
+        {
+          "currency": "USD",
+          "accountName": "Genifi s.r.o.",
+          "bankName": "Standard Chartered Bank (US)",
+          "accountNumber": "3582021234001",
+          "bic": "SCBLUS33XXX"
+        },
+        {
+          "currency": "EUR",
+          "accountName": "Genifi s.r.o.",
+          "bankName": "Standard Chartered Bank (DE)",
+          "iban": "DE89370400440532013000",
+          "bic": "SCBLDEFXXXX"
+        }
+      ]
+    }
+    ```
+
+=== "403 KYB required"
+
+    ```json
+    { "error": "kyb_required", "message": "KYB approval required" }
+    ```
+
+=== "501 Not wired"
+
+    ```json
+    {
+      "error": "not_implemented",
+      "feature": "deposit-instructions",
+      "message": "no house account is configured on this environment"
+    }
+    ```
+
+| Field | Type | Notes |
+|---|---|---|
+| `reference` | string | The code the payer quotes. **One per organization**, not per currency |
+| `accounts[].currency` | string | `USD` or `EUR` |
+| `accounts[].accountName` | string | The beneficiary. Always Genifi, never you |
+| `accounts[].bankName` | string | |
+| `accounts[].accountNumber` | string | Present for an account routed by number |
+| `accounts[].iban` | string | Present for an account routed by IBAN |
+| `accounts[].bic` | string | BIC/SWIFT, where we hold one |
+| `accounts[].bankAddress` | string | Where we hold one |
+
+**Only the fields we actually hold are returned.** A field we do not have is
+omitted rather than sent empty — a wire instruction gets retyped into a bank by a
+person, and a blank or guessed line is a payment that disappears. Likewise, a
+currency with no configured account is simply absent from `accounts`.
+
+### The reference is the whole attribution mechanism
+
+Every customer wires to the **same** Genifi account, so the bank cannot tell one
+payer from another. The reference on the transfer is the only thing that says
+whose money arrived.
+
+- It identifies **your organization**, not the transfer and not the currency. The
+  same code goes on a USD wire and on a EUR one.
+- It is stable. Reading this endpoint again returns the code you already have,
+  because reissuing would silently invalidate instructions a payer may already be
+  acting on.
+- Where you have several deposits open at once, currency, amount and arrival
+  window are what tell them apart.
+- A transfer that arrives with no reference, or a mangled one, is **not** matched
+  on amount. It parks for manual reconciliation. Crediting a guess is worse than
+  waiting.
+
+It is not a secret and not a credential. Quoting someone else's would credit
+*them*, which is exactly why it carries a check character — it is built to
+survive a typo being caught, not to be hidden.
+
+### Send USD to the USD account, EUR to the EUR account
+
+The accounts are not interchangeable. A EUR transfer into the USD account is a
+cross-currency credit our statement matching will not attribute, and it needs
+tracing by hand.
+
+### Why this read is KYB-gated
+
+Reads are otherwise open to a pending integrator — the KYB gate is on value
+moving, not on looking. This is the exception, because it is a read that *causes*
+value to move: these instructions are the mechanism by which money enters, and
+issuing them before verification means someone's wire lands in Genifi's account
+against an organization nobody has diligenced.
+
+!!! info "Also in the dashboard"
+
+    **Deposits & Withdrawals → Your deposit details** shows the same reference and
+    the same per-currency bank details, with per-field copy buttons.
+
 ## POST /treasury/onramp
 
 Converts fiat you wire in into a stablecoin, delivered to a wallet address you
@@ -60,7 +170,10 @@ you started. A wire without it, or with a mangled one, arrives unattributed and
 needs manual reconciliation.
 
 `instructions` is absent when the environment cannot produce them yet. The
-on-ramp still exists and is still polled the same way.
+on-ramp still exists and is still polled the same way — and
+[`GET /treasury/deposit-instructions`](#get-treasurydeposit-instructions) answers
+with the same bank details and the same reference regardless, so you never have
+to start a deposit to find out where to send one.
 
 ## GET /treasury/onramp/:onRampId
 

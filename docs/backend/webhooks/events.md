@@ -31,14 +31,33 @@ Every delivery has the same shape:
 | `transactionId` | string | The idempotency key you chose |
 | `data` | object | Event-specific payload |
 
-`data` carries the state and any amounts known at that point:
+`data` carries the state, the transaction's own terms, and any amounts known at
+that point:
 
 ```json
 {
   "state": "PAID_OUT",
-  "receiveAmount": { "amount": "24512750", "currency": "VND" }
+  "sendAmount": { "amount": "100000", "currency": "USD", "scale": 2 },
+  "receiveAmount": { "amount": "24512750", "currency": "VND", "scale": 0 },
+  "corridor": { "from": "USD", "to": "VND", "destinationCountry": "VN" },
+  "occurredAt": "2026-08-21T09:14:02.000Z",
+  "provider": "tazapay",
+  "payoutMode": "regular"
 }
 ```
+
+| Field | Present when |
+|---|---|
+| `state` | Always |
+| `sendAmount` | Always — what you asked us to send |
+| `corridor` | Always |
+| `occurredAt` | Always — when **this transition** happened, UTC |
+| `receiveAmount` | Once the recipient amount is known |
+| `provider` | Once a route has been chosen |
+| `payoutMode` | Once a route has been chosen (`regular` or `instant`) |
+
+New fields may be added to `data`. Ignore ones you do not recognise rather than
+rejecting the delivery.
 
 Amounts are integer minor units. See
 [Amounts and currencies](../concepts/money.md).
