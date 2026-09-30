@@ -76,7 +76,8 @@ a schedule, with retries.
 
 ### What gets delivered
 
-A signed `POST` on every transaction transition:
+A signed `POST` on every transaction transition, and when a deposit or bank
+withdrawal finishes:
 
 | Event | Fires when |
 |---|---|
@@ -86,6 +87,9 @@ A signed `POST` on every transaction transition:
 | `transaction.reconciled` | Everything agrees — the payment is done |
 | `transaction.refunded` | An unwind completed |
 | `transaction.in_doubt` | The outcome is ambiguous and parked |
+| `onramp.delivered` | A deposit reached your wallet |
+| `onramp.refunded` | A deposit was returned to the payer |
+| `offramp.paid` | A bank withdrawal reached the beneficiary |
 
 Deliveries are **at-least-once**, retried with backoff, and dead-lettered rather
 than dropped if your endpoint stays unreachable. Each delivery carries a stable

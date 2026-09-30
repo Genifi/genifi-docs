@@ -26,12 +26,13 @@ Email notifications on transaction events, configured **per person**.
     {
       "events": ["transaction.paid_out", "transaction.in_doubt"],
       "availableEvents": [
-        "transaction.quoted",
-        "transaction.funded",
         "transaction.paid_out",
         "transaction.reconciled",
         "transaction.refunded",
-        "transaction.in_doubt"
+        "transaction.in_doubt",
+        "onramp.delivered",
+        "onramp.refunded",
+        "offramp.paid"
       ],
       "emailVerified": true,
       "email": "ana@northwind.example",
@@ -96,20 +97,25 @@ An empty array is valid and means "email me nothing".
 
 ## Available events
 
-The same six transitions webhooks carry:
+Every event webhooks carry except `transaction.quoted` and
+`transaction.funded`, which are webhook-only: they fire on every payment and need
+no human.
 
 | Event | Fires when |
 |---|---|
-| `transaction.quoted` | A price is locked |
-| `transaction.funded` | Funds have left your wallet |
 | `transaction.paid_out` | The recipient has been paid |
 | `transaction.reconciled` | Everything agrees — the payment is done |
 | `transaction.refunded` | An unwind completed |
 | `transaction.in_doubt` | The outcome is ambiguous and parked |
+| `onramp.delivered` | A deposit reached your wallet |
+| `onramp.refunded` | A deposit was returned to the payer |
+| `offramp.paid` | A bank withdrawal reached the beneficiary |
 
 A member who has never set preferences is subscribed to the important
-transitions only. The chatty intermediate ones are opt-in, so a new colleague is
-not flooded on their first day.
+events: everything except `transaction.reconciled`, which is opt-in so a new
+colleague is not told twice about every payment. The deposit and withdrawal events
+were added on 2026-09-30. A member who saved preferences before then has them
+off until they tick them in Settings.
 
 ## POST /notifications/verify/send
 

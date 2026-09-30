@@ -1,6 +1,7 @@
 # Email notifications
 
-Get an email when a payment reaches a state you care about. Preferences are
+Get an email when a payment, deposit or bank withdrawal reaches a state you care
+about. Preferences are
 **per person**, not per organization — yours are yours.
 
 Find them in **Settings**.
@@ -9,16 +10,18 @@ Find them in **Settings**.
 
 | Event | Fires when |
 |---|---|
-| **Quoted** | A price has been locked |
-| **Funded** | Funds have left your wallet |
 | **Paid out** | The recipient has been paid |
 | **Reconciled** | Everything agrees — the payment is done |
 | **Refunded** | An unwind completed and the money came back |
 | **In doubt** | The outcome is ambiguous and has been parked |
+| **Deposit received** | A deposit was converted and the USDC reached your wallet |
+| **Deposit refunded** | A deposit could not be converted and was returned to the payer |
+| **Bank withdrawal paid** | A withdrawal to a bank account reached the beneficiary |
 
-If you have never changed your preferences, you are subscribed to the important
-transitions only. The chatty intermediate ones are opt-in, so nobody gets flooded
-on their first day.
+If you have never changed your preferences, you are subscribed to everything
+except **Reconciled**, which is opt-in so nobody is told twice about every
+payment. If you saved your preferences before the deposit and withdrawal emails
+existed, tick those three to start receiving them.
 
 ## What an email contains
 
@@ -85,7 +88,8 @@ Once the underlying problem is fixed, re-verify the address to resume.
 ## Notifications are for people
 
 For **systems**, use webhooks instead: signed, retried, machine-readable
-deliveries on the same six events. See
+deliveries on every transition, including **Quoted** and **Funded**, which are
+webhook-only because they fire on every payment and need no human. See
 [API keys and webhooks](api-keys-and-webhooks.md).
 
 A good split is webhooks driving your automation, and email telling your

@@ -1,6 +1,7 @@
 # Event types
 
-Six events, one per transaction transition worth telling you about.
+Six events for a payment, one per transition worth telling you about, and three
+for deposits and withdrawals, one per outcome.
 
 | Event | Fires when | Typical reaction |
 |---|---|---|
@@ -10,6 +11,9 @@ Six events, one per transaction transition worth telling you about.
 | `transaction.reconciled` | Books, chain, and provider all agree — the payment is **done** | Settle your own accounting |
 | `transaction.refunded` | An unwind completed and the money came back | Return the funds to your customer |
 | `transaction.in_doubt` | The outcome is ambiguous and has been parked | Alert operations. **Do not** retry the payment |
+| `onramp.delivered` | A deposit was converted and the USDC reached your wallet | Credit your customer |
+| `onramp.refunded` | A deposit could not be converted and the money went back to the payer | Tell the payer; nothing reached your wallet |
+| `offramp.paid` | A withdrawal to a bank account reached the beneficiary | Tell the beneficiary the money has been sent |
 
 ## Envelope
 
@@ -27,8 +31,8 @@ Every delivery has the same shape:
 | Field | Type | Notes |
 |---|---|---|
 | `deliveryId` | string | Stable across retries. **De-duplicate on this** |
-| `event` | string | One of the six above |
-| `transactionId` | string | The idempotency key you chose |
+| `event` | string | One of the events above |
+| `transactionId` | string | The idempotency key you chose — for a payment, or for the deposit or withdrawal an `onramp.*` / `offramp.*` event is about |
 | `data` | object | Event-specific payload |
 
 `data` carries the state, the transaction's own terms, and any amounts known at
@@ -61,6 +65,43 @@ rejecting the delivery.
 
 Amounts are integer minor units. See
 [Amounts and currencies](../concepts/money.md).
+
+## Deposit and withdrawal events
+
+A deposit or withdrawal is announced once, when it finishes. The envelope is the
+same, and `transactionId` carries the idempotency key you sent to
+`POST /treasury/onramp`, `POST /treasury/onramp/pix` or `POST /treasury/offramp`.
+A wire that arrived without a request of yours carries the id Genifi gave it:
+
+```json
+{
+  "deliveryId": "dep-2026-09-30-0001:onramp.delivered",
+  "event": "onramp.delivered",
+  "transactionId": "dep-2026-09-30-0001",
+  "data": {
+    "onRampId": "dep-2026-09-30-0001",
+    "state": "DELIVERED",
+    "sendAmount": { "amount": "100000", "currency": "EUR", "scale": 2 },
+    "receiveAmount": { "amount": "107946000", "currency": "USDC", "scale": 6 },
+    "fee": { "amount": "54000", "currency": "USDC", "scale": 6 },
+    "txHash": "0x9c4e…"
+  }
+}
+```
+
+| Field | Event | Meaning |
+|---|---|---|
+| `onRampId` / `offRampId` | all | The deposit or withdrawal id, again |
+| `state` | all | `DELIVERED`, `REFUNDED` or `PAID` |
+| `sendAmount` | all | What came in: the fiat deposited, or the USDC withdrawn |
+| `receiveAmount` | `onramp.delivered`, `offramp.paid` | What went out: the USDC credited, or the fiat the beneficiary receives |
+| `fee` | when charged | Genifi's fee |
+| `txHash` | `onramp.delivered` | The on-chain transaction that credited your wallet |
+| `reason` | `onramp.refunded` | Why the deposit could not be converted |
+| `beneficiaryId` | `offramp.paid` | The beneficiary you registered |
+
+A deposit or withdrawal that parks for review sends nothing — it is still running.
+Read its status from the dashboard or the API.
 
 ## Which events actually matter
 
@@ -107,6 +148,6 @@ that is always authoritative.
 
 ## Notification emails
 
-The same six events back per-person email notifications in the dashboard. Those
-are for humans; webhooks are for systems. See
-[Notifications](../api/notifications.md).
+The same events, except `transaction.quoted` and `transaction.funded`, back
+per-person email notifications in the dashboard. Those are for humans; webhooks
+are for systems. See [Notifications](../api/notifications.md).
