@@ -13,13 +13,13 @@ You need three things, all issued during onboarding:
 
 | | |
 |---|---|
-| **Base URL** | The address of your Genifi environment. Written `$GENIFI_API` throughout these docs. |
-| **API key** | Your organization's server-to-server credential. Written `$GENIFI_API_KEY`. |
-| **A registered wallet** | The wallet Genifi funds the payment from. Its ID goes in `integratorWalletId`. |
+| **Base URL** | The address of your JET environment. Written `$JET_API` throughout these docs. |
+| **API key** | Your organization's server-to-server credential. Written `$JET_API_KEY`. |
+| **A funded balance** | USDC in your JET balance. You get a wallet at onboarding; fund it with a [deposit](../api/treasury.md). |
 
 ```bash
-export GENIFI_API="https://…"          # issued at onboarding
-export GENIFI_API_KEY="gk_…"           # issued at onboarding
+export JET_API="https://…"          # issued at onboarding
+export JET_API_KEY="gk_…"           # issued at onboarding
 ```
 
 !!! warning
@@ -32,7 +32,7 @@ export GENIFI_API_KEY="gk_…"           # issued at onboarding
 ## 1. Check you are connected
 
 ```bash
-curl "$GENIFI_API/health"
+curl "$JET_API/health"
 ```
 
 ```json
@@ -40,13 +40,13 @@ curl "$GENIFI_API/health"
 ```
 
 `/health` needs no credentials. A `503` with `"status": "degraded"` means we
-cannot start new payments right now — do not treat it as a reason to retry a
+cannot start new payments right now: do not treat it as a reason to retry a
 send in a tight loop.
 
 ## 2. Confirm your key works
 
 ```bash
-curl "$GENIFI_API/me" -H "Authorization: Bearer $GENIFI_API_KEY"
+curl "$JET_API/me" -H "Authorization: Bearer $JET_API_KEY"
 ```
 
 ```json
@@ -57,47 +57,36 @@ This is the honest auth probe: it has no side effects and tells you *which*
 organization the key belongs to. Useful when you hold keys for more than one
 environment.
 
-## 3. Find your wallet
+## 3. Check your balance
 
 ```bash
-curl "$GENIFI_API/wallets" -H "Authorization: Bearer $GENIFI_API_KEY"
+curl "$JET_API/balance" -H "Authorization: Bearer $JET_API_KEY"
 ```
 
 ```json
 {
-  "accounts": [
-    {
-      "id": "acc_9c1a…",
-      "kind": "wallet",
-      "provider": "external",
-      "externalId": "wal_your_wallet",
-      "label": "USDC pay-in",
-      "currencies": ["USDC"],
-      "address": "0x…",
-      "status": "active",
-      "createdAt": "2026-07-02T09:14:00.000Z"
-    }
-  ],
-  "count": 1
+  "currency": "USDC",
+  "scale": 6,
+  "available": "2500000000",
+  "settling": "0",
+  "total": "2500000000",
+  "complete": true,
+  "reportedAt": "2026-08-21T14:01:30.000Z"
 }
 ```
 
-The value you pass as `integratorWalletId` is the **`externalId`**.
-
-!!! info
-
-    Wallet listings deliberately carry **no balances**. Genifi's ledger is the
-    source of truth for value; a provider-reported balance is a report to be
-    reconciled against it, not an authority. Balances are exposed separately, where
-    a provider is wired — see [Wallets and accounts](../api/wallets-and-accounts.md).
+`available` is what a payment can spend now: 2,500 USDC here, in integer minor
+units at `scale` 6. You never name a wallet when you pay: every payment is funded
+from your **home wallet**, where this balance lives. See
+[Balance and wallets](../api/wallets-and-accounts.md).
 
 ## 4. Price the payment
 
 A quote is free, moves nothing, and locks a rate for about a minute.
 
 ```bash
-curl -X POST "$GENIFI_API/quotes" \
-  -H "Authorization: Bearer $GENIFI_API_KEY" \
+curl -X POST "$JET_API/quotes" \
+  -H "Authorization: Bearer $JET_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "corridor": { "to": "VND", "destinationCountry": "VN" },
@@ -107,14 +96,14 @@ curl -X POST "$GENIFI_API/quotes" \
 
 ```json
 {
-  "quoteId": "qte_8b3d…",
+  "quoteId": "q_3d6e9932-61c7-49cb-9259-9703dabf3cdc",
   "sendAmount": { "amount": "1000000000", "currency": "USDC", "scale": 6 },
-  "receiveAmount": { "amount": "24512750", "currency": "VND", "scale": 0 },
-  "fee": { "amount": "4200000", "currency": "USDC", "scale": 6 },
-  "rate": { "…": "…" },
-  "provider": "owned-vn",
-  "routeKind": "owned",
-  "estimatedSeconds": 45,
+  "receiveAmount": { "amount": "24904406", "currency": "VND", "scale": 0 },
+  "fee": { "amount": "0", "currency": "VND", "scale": 0 },
+  "rate": { "from": "USDC", "to": "VND", "numerator": "…", "denominator": "…" },
+  "provider": "tazapay",
+  "routeKind": "orchestrator",
+  "estimatedSeconds": 300,
   "expiresAt": "2026-08-21T14:03:11.000Z"
 }
 ```
@@ -127,20 +116,20 @@ to whole units of the destination currency.
 Pass the `quoteId` to execute at exactly that locked price.
 
 ```bash
-curl -X POST "$GENIFI_API/transactions" \
-  -H "Authorization: Bearer $GENIFI_API_KEY" \
+curl -X POST "$JET_API/transactions" \
+  -H "Authorization: Bearer $JET_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "idempotencyKey": "pay-2026-08-21-0001",
-    "quoteId": "qte_8b3d…",
+    "quoteId": "q_3d6e9932-61c7-49cb-9259-9703dabf3cdc",
     "corridor": { "to": "VND", "destinationCountry": "VN" },
     "sendAmount": { "amount": "1000.00", "currency": "USDC" },
-    "integratorWalletId": "wal_your_wallet",
     "recipientReference": "customer-4471",
     "beneficiary": {
       "name": "NGUYEN VAN A",
       "account": "0123456789",
       "bankName": "Vietcombank",
+      "bic": "BFTVVNVX",
       "country": "VN"
     }
   }'
@@ -153,8 +142,8 @@ curl -X POST "$GENIFI_API/transactions" \
 ## 6. Watch it finish
 
 ```bash
-curl "$GENIFI_API/transactions/pay-2026-08-21-0001" \
-  -H "Authorization: Bearer $GENIFI_API_KEY"
+curl "$JET_API/transactions/pay-2026-08-21-0001" \
+  -H "Authorization: Bearer $JET_API_KEY"
 ```
 
 ```json
@@ -162,12 +151,12 @@ curl "$GENIFI_API/transactions/pay-2026-08-21-0001" \
   "transactionId": "pay-2026-08-21-0001",
   "running": false,
   "state": "RECONCILED",
-  "provider": "owned-vn",
+  "provider": "tazapay",
   "payoutMode": "regular",
-  "receiveAmount": { "amount": "24512750", "currency": "VND" },
+  "receiveAmount": { "amount": "24904406", "currency": "VND", "scale": 0 },
   "timeline": [
     { "state": "INITIATED" },
-    { "state": "QUOTED", "detail": "locked qte_8b3d…" },
+    { "state": "QUOTED", "detail": "locked q_3d6e9932…" },
     { "state": "FUNDED" },
     { "state": "ROUTING" },
     { "state": "SETTLING" },
@@ -189,6 +178,7 @@ signed, with retries.
 
 ## Next steps
 
-* [Idempotency](../concepts/idempotency.md) — how to retry safely. Read this before going live.
-* [Amounts and currencies](../concepts/money.md) — the two amount formats and why.
-* [Errors](../reference/errors.md) — every error code and what to do about it.
+* [Idempotency](../concepts/idempotency.md): how to retry safely. Read this before going live.
+* [Amounts and currencies](../concepts/money.md): the two amount formats and why.
+* [Errors](../reference/errors.md): every error code and what to do about it.
+* [API reference](../api-reference/README.md): every endpoint, generated from the API itself.

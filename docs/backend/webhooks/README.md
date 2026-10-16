@@ -4,8 +4,8 @@ description: Signed, retried, at-least-once notifications on every transaction t
 
 # Webhooks
 
-Instead of polling every payment, register one endpoint and Genifi pushes each
-state change to you — signed, with retries and a dead-letter path.
+Instead of polling every payment, register one endpoint and JET pushes each
+state change to you, signed, with retries and a dead-letter path.
 
 One endpoint per organization. Registering a new URL **replaces** the old one.
 
@@ -16,24 +16,24 @@ Requires `webhook.manage` (admin or owner).
 === "Request"
 
     ```bash
-    curl -X PUT "$GENIFI_API/webhooks/endpoint" \
-      -H "Authorization: Bearer $GENIFI_API_KEY" \
+    curl -X PUT "$JET_API/webhooks/endpoint" \
+      -H "Authorization: Bearer $JET_API_KEY" \
       -H "Content-Type: application/json" \
-      -d '{ "url": "https://hooks.northwind.example/genifi" }'
+      -d '{ "url": "https://hooks.northwind.example/jet" }'
     ```
 
 === "200 OK"
 
     ```json
     {
-      "url": "https://hooks.northwind.example/genifi",
+      "url": "https://hooks.northwind.example/jet",
       "secret": "whsec_kR3n…"
     }
     ```
 
 !!! danger
 
-    **The `secret` is shown once.** There is no read path back to it — a `GET` that
+    **The `secret` is shown once.** There is no read path back to it: a `GET` that
     returned it would turn a read-scoped credential leak into a forgeable-delivery
     leak. Store it before you do anything else.
 
@@ -60,21 +60,21 @@ from inside our own network, on a schedule, with retries.
 ## Read the registered endpoint
 
 ```bash
-curl "$GENIFI_API/webhooks/endpoint" -H "Authorization: Bearer $GENIFI_API_KEY"
+curl "$JET_API/webhooks/endpoint" -H "Authorization: Bearer $JET_API_KEY"
 ```
 
 ```json
-{ "url": "https://hooks.northwind.example/genifi" }
+{ "url": "https://hooks.northwind.example/jet" }
 ```
 
-`{ "url": null }` when nothing is registered — that is a normal state of a
+`{ "url": null }` when nothing is registered: that is a normal state of a
 resource that exists, not a `404`. The secret is never returned.
 
 ## Delete the endpoint
 
 ```bash
-curl -X DELETE "$GENIFI_API/webhooks/endpoint" \
-  -H "Authorization: Bearer $GENIFI_API_KEY"
+curl -X DELETE "$JET_API/webhooks/endpoint" \
+  -H "Authorization: Bearer $JET_API_KEY"
 ```
 
 ```json
@@ -93,13 +93,13 @@ deleting when nothing is registered returns `200` with `deleted: false`.
 ## What a delivery looks like
 
 ```http
-POST /genifi HTTP/1.1
+POST /jet HTTP/1.1
 Host: hooks.northwind.example
 Content-Type: application/json
-X-Genifi-Signature: sha256=9f2c…
-X-Genifi-Timestamp: 1787320991
-X-Genifi-Delivery-Id: dlv_6ac1…
-X-Genifi-Event: transaction.reconciled
+X-Jet-Signature: sha256=9f2c…
+X-Jet-Timestamp: 1787320991
+X-Jet-Delivery-Id: dlv_6ac1…
+X-Jet-Event: transaction.reconciled
 ```
 
 ```json
@@ -121,17 +121,17 @@ X-Genifi-Event: transaction.reconciled
 
 | Header | Meaning |
 |---|---|
-| `X-Genifi-Signature` | `sha256=<hex>` HMAC over `{timestamp}.{rawBody}` |
-| `X-Genifi-Timestamp` | Unix **seconds**, bound into the signature |
-| `X-Genifi-Delivery-Id` | Stable across retries of the same delivery |
-| `X-Genifi-Event` | The event type, also present in the body |
+| `X-Jet-Signature` | `sha256=<hex>` HMAC over `{timestamp}.{rawBody}` |
+| `X-Jet-Timestamp` | Unix **seconds**, bound into the signature |
+| `X-Jet-Delivery-Id` | Stable across retries of the same delivery |
+| `X-Jet-Event` | The event type, also present in the body |
 
 **Always verify the signature before trusting a delivery.** See
 [Verifying signatures](verifying.md).
 
 ## Responding
 
-Return any `2xx` and we mark the delivery done. Anything else — or a timeout — is
+Return any `2xx` and we mark the delivery done. Anything else, or a timeout, is
 a failed attempt.
 
 Respond fast and do your work asynchronously. A slow endpoint turns into retries,
@@ -139,14 +139,14 @@ and retries turn into duplicate processing on your side.
 
 ## Delivery guarantees
 
-**At-least-once.** A delivery may arrive more than once — after a network blip,
+**At-least-once.** A delivery may arrive more than once: after a network blip,
 or a retry of a request we never saw succeed.
 
 **De-duplicate on `deliveryId`.** A retry carries the *same* `deliveryId`, so
 recording IDs you have processed turns at-least-once into effectively
 exactly-once on your side.
 
-**Retries back off exponentially** — roughly 1s, 2s, 4s, 8s, and so on — up to a
+**Retries back off exponentially** (roughly 1s, 2s, 4s, 8s, and so on) up to a
 small number of attempts, then the delivery **dead-letters** rather than being
 dropped. Nothing is silently lost.
 
@@ -160,7 +160,7 @@ read `GET /transactions/:id`.
 ## A robust receiver
 
 ```
-1. Read the raw body — bytes, before any parsing
+1. Read the raw body: bytes, before any parsing
 2. Verify the HMAC in constant time
 3. Check the timestamp is within your tolerance (5 minutes is typical)
 4. Have I seen this deliveryId? → return 200, do nothing
@@ -174,5 +174,5 @@ becoming a double-processing incident.
 
 ## Next
 
-* [Event types](events.md) — every event and when it fires
-* [Verifying signatures](verifying.md) — with working code
+* [Event types](events.md): every event and when it fires
+* [Verifying signatures](verifying.md): with working code

@@ -22,7 +22,7 @@ Rotation is atomic: a new key is minted and the old one dies at the same moment.
 
     The new key is shown **once**, and there is no way to read it back later.
 
-    The old key — including the one your integration is using right now — stops
+    The old key, including the one your integration is using right now, stops
     working immediately. There is no overlap window. Have somewhere to put the new
     key before you click, and expect a gap unless you can deploy it instantly.
 
@@ -41,7 +41,7 @@ places.
 ## Webhooks
 
 Rather than having your systems poll for payment status, register one endpoint
-and Genifi pushes every state change to you.
+and JET pushes every state change to you.
 
 Managing webhooks needs the `admin` role or higher.
 
@@ -54,13 +54,13 @@ You get back a **signing secret**, shown once.
 !!! danger
 
     Store the signing secret immediately. It is never displayed again, and there is
-    no way to read it back — a read path would turn a read-only credential leak into
+    no way to read it back: a read path would turn a read-only credential leak into
     the ability to forge deliveries to your own system.
 
 ### One endpoint at a time
 
 Your organization has exactly one webhook endpoint. Registering a new URL
-**replaces** the previous one and mints a **fresh** secret — the old secret stops
+**replaces** the previous one and mints a **fresh** secret: the old secret stops
 working straight away.
 
 ### URL rules
@@ -71,21 +71,27 @@ working straight away.
 | No private or internal addresses | `localhost`, `127.*`, `10.*`, `192.168.*`, `169.254.*`, `.internal`, `.local` are refused |
 
 The second rule exists because a webhook target is chosen by the caller. Without
-it, a URL could be used to make Genifi issue requests inside its own network, on
+it, a URL could be used to make JET issue requests inside its own network, on
 a schedule, with retries.
 
 ### What gets delivered
 
-A signed `POST` on every transaction transition:
+A signed `POST` on every payment transition, and when a deposit, batch or bank
+withdrawal finishes:
 
 | Event | Fires when |
 |---|---|
 | `transaction.quoted` | A price is locked |
 | `transaction.funded` | Funds have left your wallet |
 | `transaction.paid_out` | The recipient has been paid |
-| `transaction.reconciled` | Everything agrees — the payment is done |
-| `transaction.refunded` | An unwind completed |
+| `transaction.reconciled` | Everything agrees: the payment is done |
+| `transaction.refunded` | The payment was cancelled and the money returned |
 | `transaction.in_doubt` | The outcome is ambiguous and parked |
+| `batch.rejected` | A batch was refused before anything moved |
+| `batch.completed` | No item of a batch is still running |
+| `onramp.delivered` | A deposit reached your wallet |
+| `onramp.refunded` | A deposit was returned to the payer |
+| `offramp.paid` | A bank withdrawal reached the beneficiary |
 
 Deliveries are **at-least-once**, retried with backoff, and dead-lettered rather
 than dropped if your endpoint stays unreachable. Each delivery carries a stable
@@ -103,7 +109,7 @@ secret.
 ### Turning it off
 
 Deleting the endpoint stops delivery and destroys the signing secret. Deliveries
-already queued are not cancelled — they fail and dead-letter rather than
+already queued are not cancelled: they fail and dead-letter rather than
 disappearing, so nothing is silently lost.
 
 Deleting is confirmed behind a dialog, because it destroys a secret that cannot

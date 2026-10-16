@@ -1,15 +1,58 @@
 # Event types
 
-Six events, one per transaction transition worth telling you about.
+Eleven events across four kinds of subject: payments, batches, deposits and
+off-ramps. The authoritative list, generated from the API source, is in the
+[API reference](../api-reference/webhooks.md#event-types).
+
+## Payments
 
 | Event | Fires when | Typical reaction |
 |---|---|---|
 | `transaction.quoted` | A price has been locked for the payment | Record the rate |
-| `transaction.funded` | Funds have left your wallet and are held by Genifi | Mark the customer's funds as committed |
+| `transaction.funded` | Funds have left your wallet and are held by JET | Mark the customer's funds as committed |
 | `transaction.paid_out` | The local partner confirms the recipient has been paid | Tell your customer the money has landed |
-| `transaction.reconciled` | Books, chain, and provider all agree — the payment is **done** | Settle your own accounting |
-| `transaction.refunded` | An unwind completed and the money came back | Return the funds to your customer |
+| `transaction.reconciled` | Books, chain, and provider all agree. The payment is **done** | Settle your own accounting |
+| `transaction.refunded` | The payment was cancelled and the full amount returned to your home wallet | Return the funds to your customer |
 | `transaction.in_doubt` | The outcome is ambiguous and has been parked | Alert operations. **Do not** retry the payment |
+
+Each item in a [batch](../api/batches.md) is an ordinary payment, so it sends
+these events too, under its own transaction ID (`<batchId>:<itemRef>`).
+
+## Batches
+
+| Event | Fires when |
+|---|---|
+| `batch.rejected` | The batch was refused before anything moved: no item started, nothing was funded |
+| `batch.completed` | No item is still running. **Not** the same as every item paid |
+
+`batch.completed` carries counts, because "finished" and "paid" are different
+claims:
+
+```json
+{
+  "deliveryId": "dlv_91f0…",
+  "event": "batch.completed",
+  "transactionId": "payroll-2026-10-15",
+  "data": {
+    "batchId": "payroll-2026-10-15",
+    "items": { "RECONCILED": 997, "NEEDS_ATTENTION": 3 }
+  }
+}
+```
+
+`batch.rejected` carries `data.reason`, saying why.
+
+## Deposits and off-ramps
+
+| Event | Fires when |
+|---|---|
+| `onramp.delivered` | A deposit converted and the USDC is in your wallet |
+| `onramp.refunded` | A deposit could not be completed and the payer's money was returned |
+| `offramp.paid` | An off-ramp paid the beneficiary |
+
+`data` carries the deposit or off-ramp ID (`onRampId` / `offRampId`), its
+`state`, the `sendAmount`, and, once known, `receiveAmount` and `fee`. A
+delivered deposit adds `txHash`; an off-ramp adds `beneficiaryId`.
 
 ## Envelope
 
@@ -27,12 +70,12 @@ Every delivery has the same shape:
 | Field | Type | Notes |
 |---|---|---|
 | `deliveryId` | string | Stable across retries. **De-duplicate on this** |
-| `event` | string | One of the six above |
-| `transactionId` | string | The idempotency key you chose |
+| `event` | string | One of the events above |
+| `transactionId` | string | The subject's ID: the payment, batch, deposit or off-ramp. For anything you started, the idempotency key you chose |
 | `data` | object | Event-specific payload |
 
-`data` carries the state, the transaction's own terms, and any amounts known at
-that point:
+For a payment event, `data` carries the state, the payment's own terms, and any
+amounts known at that point:
 
 ```json
 {
@@ -49,30 +92,30 @@ that point:
 | Field | Present when |
 |---|---|
 | `state` | Always |
-| `sendAmount` | Always — what you asked us to send |
+| `sendAmount` | Always: what you asked us to send |
 | `corridor` | Always |
-| `occurredAt` | Always — when **this transition** happened, UTC |
+| `occurredAt` | Always: when **this transition** happened, UTC |
 | `receiveAmount` | Once the recipient amount is known |
 | `provider` | Once a route has been chosen |
-| `payoutMode` | Once a route has been chosen (`regular` or `instant`) |
+| `payoutMode` | Once a route has been chosen. Always `regular` today |
 
-New fields may be added to `data`. Ignore ones you do not recognise rather than
-rejecting the delivery.
+New fields may be added to `data`, and new event types may be added. Ignore ones
+you do not recognise rather than rejecting the delivery.
 
 Amounts are integer minor units. See
 [Amounts and currencies](../concepts/money.md).
 
 ## Which events actually matter
 
-For most integrations, three:
+For most payment integrations, three:
 
-**`transaction.paid_out`** — the recipient has the money. This is the moment your
+**`transaction.paid_out`**: the recipient has the money. This is the moment your
 customer wants to hear about.
 
-**`transaction.reconciled`** — the payment is genuinely finished and the final
+**`transaction.reconciled`**: the payment is genuinely finished and the final
 amounts are settled. This is the moment your *ledger* should hear about.
 
-**`transaction.in_doubt`** — you need a human.
+**`transaction.in_doubt`**: you need a human.
 
 `quoted` and `funded` are useful for a detailed progress UI and noise otherwise.
 
@@ -86,14 +129,22 @@ Show `paid_out` to your customer; settle your own accounting on `reconciled`.
 
 ## `in_doubt` is not a failure
 
-It means the honest answer is "we don't know yet" — a provider call timed out, or
+It means the honest answer is "we don't know yet": a provider call timed out, or
 a response was ambiguous, and we would rather park the payment than guess.
 
-Genifi re-queries the provider on a schedule and the payment resumes on its own.
-It will reach a terminal state without you doing anything.
+JET re-queries the provider on a schedule and the payment resumes on its own.
 
 So: alert your operations team, and **do not** start a replacement payment. A
 replacement is how an ambiguous payment becomes a confirmed double-payment.
+
+## A payment waiting for an operator sends no event
+
+A payment whose funds have moved but which cannot be paid out yet retries on its
+own (`PENDING_RETRY`) and then waits for our operations team
+(`NEEDS_ATTENTION`). Neither state sends a webhook: the payment is not finished,
+and nothing has gone back to you. Read the state from
+[`GET /transactions/:id`](../api/transactions.md#get-transactionsid). See
+[How a payment works](../concepts/payment-lifecycle.md).
 
 ## Ordering
 
@@ -102,11 +153,10 @@ can cross.
 
 Guard your state machine accordingly: keep the state you have already recorded,
 and ignore an event that would move a payment backwards. If you need certainty at
-any moment, read [`GET /transactions/:id`](../api/transactions.md#get-transactionsid) —
+any moment, read [`GET /transactions/:id`](../api/transactions.md#get-transactionsid):
 that is always authoritative.
 
 ## Notification emails
 
-The same six events back per-person email notifications in the dashboard. Those
-are for humans; webhooks are for systems. See
-[Notifications](../api/notifications.md).
+Team members can be emailed about a subset of these events. Those are for
+humans; webhooks are for systems. See [Notifications](../api/notifications.md).

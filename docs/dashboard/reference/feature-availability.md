@@ -5,7 +5,7 @@ explains why, and how to read what you see.
 
 ## Why a feature might not be available
 
-Genifi's rail is assembled from several connections — wallet providers, issuers,
+JET's rail is assembled from several connections: wallet providers, issuers,
 banking partners, local payout partners. Not every environment has every one
 connected.
 
@@ -20,7 +20,7 @@ Instead of the feature, you get a panel with:
 * **why it isn't available here**
 * **what it needs** in order to work
 
-No dead buttons, no spinner that never resolves, and — importantly — no screen of
+No dead buttons, no spinner that never resolves, and, importantly, no screen of
 plausible-looking numbers that are not real.
 
 ## The availability levels
@@ -28,7 +28,7 @@ plausible-looking numbers that are not real.
 | Level | What you can do |
 |---|---|
 | **Live** | Works now, fully |
-| **Partial** | You can **see** things — the accounts registered to you. The actions that move value need a provider connection |
+| **Partial** | You can **see** things: the accounts registered to you. The actions that move value need a provider connection |
 | **Local** | Handled in your browser; no backend involved |
 | **Planned** | Not built yet. Shown as unavailable rather than hidden, so you know it's coming |
 
@@ -43,22 +43,22 @@ plausible-looking numbers that are not real.
 
 ## Typically partial
 
-**Wallets** — the list of your registered wallets always works. Balances need a
+**Wallets**: the list of your registered wallets always works. Balances need a
 wallet provider connection.
 
-**Mint accounts** — your registered issuer accounts always list. Mint and redeem
+**Mint accounts**: your registered issuer accounts always list. Mint and redeem
 need an issuer connection.
 
-**Deposits & withdrawals** — your registered custody accounts always list.
+**Deposits & withdrawals**: your registered custody accounts always list.
 Balances and wires need a banking connection.
 
-The pattern is consistent: **reads of Genifi's own records work everywhere;
+The pattern is consistent: **reads of JET's own records work everywhere;
 actions that reach out to a provider need that provider connected.**
 
 ## Why listings work without a provider
 
-Wallets, mint accounts, and custody accounts are held in Genifi's own account
-registry. That is what makes them list with nothing else connected — and also why
+Wallets, mint accounts, and custody accounts are held in JET's own account
+registry. That is what makes them list with nothing else connected, and also why
 they carry no balances. A balance is a report from a provider, and without the
 provider there is no report.
 
@@ -83,7 +83,7 @@ Separate from feature availability, the banner at the top reports the connection
 | **Degraded** | Reachable, but new payments cannot start right now. Existing payments are unaffected |
 | **Unreachable** | The dashboard cannot reach the backend |
 
-It refreshes on its own — no need to reload to see it recover.
+It refreshes on its own: no need to reload to see it recover.
 
 ## In demo mode, everything works
 
@@ -95,6 +95,6 @@ environment.
 
 ## Getting a feature enabled
 
-Availability follows your environment and your commercial arrangement — it is not
-a toggle in the dashboard. Talk to your Genifi account contact about what you
+Availability follows your environment and your commercial arrangement: it is not
+a toggle in the dashboard. Talk to your JET account contact about what you
 need, and it will appear when the connection behind it is live for you.

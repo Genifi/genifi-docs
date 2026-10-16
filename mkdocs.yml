@@ -1,17 +1,18 @@
-site_name: Genifi Documentation
+site_name: JET Documentation
 site_description: >-
-  Genifi is a cross-border payment rail. You send a stablecoin amount; your
+  JET is a cross-border payment rail. You send a stablecoin amount; your
   recipient is paid in their local currency.
-site_url: https://docs.genifi.io
-repo_url: https://github.com/Genifi/genifi-docs
-repo_name: Genifi/genifi-docs
-edit_uri: edit/main/docs/
+site_url: https://docs.jet.money
 
 docs_dir: docs
 
 # Fail the build on a broken internal link or a page missing from the nav.
 # Docs that quietly lose a link are worse than docs that fail loudly in CI.
 strict: true
+# Including a link to a heading that does not exist: the generated API
+# reference links into the guides by anchor, and a renamed heading must fail.
+validation:
+  anchors: warn
 
 # Kept in the repo for the GitBook space, not part of the built site.
 exclude_docs: |
@@ -26,7 +27,6 @@ theme:
     - navigation.top
     - navigation.footer
     - content.code.copy
-    - content.action.edit
     - search.suggest
     - search.highlight
     - toc.follow
@@ -88,17 +88,39 @@ nav:
           - Amounts and currencies: backend/concepts/money.md
           - Corridors: backend/concepts/corridors.md
           - Idempotency: backend/concepts/idempotency.md
-      - API reference:
+      - Guides:
           - Conventions: backend/api/conventions.md
           - Discovery: backend/api/discovery.md
           - Quotes: backend/api/quotes.md
           - Payments: backend/api/transactions.md
-          - Wallets and accounts: backend/api/wallets-and-accounts.md
-          - Treasury: backend/api/treasury.md
+          - Batch payouts: backend/api/batches.md
+          - Balance and wallets: backend/api/wallets-and-accounts.md
+          - Deposits: backend/api/treasury.md
+          - Withdrawals and off-ramps: backend/api/withdrawals.md
           - Recipients: backend/api/recipients.md
           - Team and API keys: backend/api/team.md
           - Statements: backend/api/statements.md
           - Notifications: backend/api/notifications.md
+      # Generated from the API source by `pnpm api:reference` in the backend repo.
+      # Do not edit the lines between the markers by hand.
+      - API reference:
+          # BEGIN generated: api-reference
+          - Overview: backend/api-reference/README.md
+          - Discovery: backend/api-reference/discovery.md
+          - Quotes and payments: backend/api-reference/payments.md
+          - Batch payouts: backend/api-reference/batches.md
+          - Balance and wallets: backend/api-reference/balance.md
+          - Deposits: backend/api-reference/deposits.md
+          - Withdrawals and off-ramps: backend/api-reference/withdrawals.md
+          - Recipients: backend/api-reference/recipients.md
+          - Team and API keys: backend/api-reference/team.md
+          - Webhooks: backend/api-reference/webhooks.md
+          - Email notifications: backend/api-reference/notifications.md
+          - Statements: backend/api-reference/statements.md
+          - Sandbox tools: backend/api-reference/sandbox.md
+          - Error codes: backend/api-reference/errors.md
+          - Shared types: backend/api-reference/types.md
+          # END generated: api-reference
       - Webhooks:
           - Overview: backend/webhooks/README.md
           - Event types: backend/webhooks/events.md

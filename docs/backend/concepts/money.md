@@ -1,10 +1,10 @@
 ---
-description: Two amount formats, one rule — never a JSON number.
+description: "Two amount formats, one rule: never a JSON number."
 ---
 
 # Amounts and currencies
 
-Genifi never represents money as a JSON number, and neither should you.
+JET never represents money as a JSON number, and neither should you.
 
 A JSON number is an IEEE 754 double. It cannot hold a 6-decimal stablecoin
 amount without silent precision loss, and a fraction of a cent that disappears
@@ -24,7 +24,7 @@ in transit is exactly the class of bug that money systems exist to prevent.
 "receiveAmount": { "amount": "24512750", "currency": "VND", "scale": 0 }
 ```
 
-Both `amount` values are **strings**. The response adds `scale` — the number of
+Both `amount` values are **strings**. The response adds `scale`: the number of
 decimal places the currency has.
 
 ## Reading a response amount
@@ -63,16 +63,16 @@ way to a total.
 
 | Currency | Scale | Role |
 |---|:---:|---|
-| `USDC` | 6 | Stablecoin — the send currency |
-| `EURC` | 6 | Euro stablecoin — held after a EUR top-up |
+| `USDC` | 6 | Stablecoin: the send currency |
+| `EURC` | 6 | Euro stablecoin: held after a EUR top-up |
 | `USD` | 2 | Settlement |
 | `EUR` | 2 | Pay-in |
 | `GBP` | 2 | Pay-in |
 | `CZK` | 2 | Pay-in |
-| `VND` | 0 | Payout — Vietnam |
-| `NGN` | 2 | Payout — Nigeria |
-| `PHP` | 2 | Payout — Philippines |
-| `INR` | 2 | Payout — India |
+| `VND` | 0 | Payout: Vietnam |
+| `NGN` | 2 | Payout: Nigeria |
+| `PHP` | 2 | Payout: Philippines |
+| `INR` | 2 | Payout: India |
 
 Vietnamese đồng has no subunit in practice, which is why its scale is `0`. A VND
 amount of `"24512750"` is twenty-four and a half million đồng, not two hundred
@@ -100,7 +100,7 @@ customer will never be quoted more than the recipient receives.
 
 ## No implicit conversion
 
-Every currency conversion in Genifi is an explicit, logged operation. There is no
+Every currency conversion in JET is an explicit, logged operation. There is no
 endpoint that silently converts one currency into another as a side effect of
 doing something else. If a payment involves FX, the rate is in the quote and the
 conversion is a step in the [lifecycle](payment-lifecycle.md).

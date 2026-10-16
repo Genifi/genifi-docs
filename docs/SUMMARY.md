@@ -1,6 +1,6 @@
 # Table of contents
 
-* [Genifi Documentation](README.md)
+* [JET Documentation](README.md)
 
 ## Backend API
 
@@ -16,8 +16,10 @@
   * [Discovery](backend/api/discovery.md)
   * [Quotes](backend/api/quotes.md)
   * [Payments](backend/api/transactions.md)
-  * [Wallets and accounts](backend/api/wallets-and-accounts.md)
-  * [Treasury](backend/api/treasury.md)
+  * [Batch payouts](backend/api/batches.md)
+  * [Balance and wallets](backend/api/wallets-and-accounts.md)
+  * [Deposits](backend/api/treasury.md)
+  * [Withdrawals and off-ramps](backend/api/withdrawals.md)
   * [Recipients](backend/api/recipients.md)
   * [Team and API keys](backend/api/team.md)
   * [Statements](backend/api/statements.md)
@@ -25,6 +27,24 @@
 * [Webhooks](backend/webhooks/README.md)
   * [Event types](backend/webhooks/events.md)
   * [Verifying signatures](backend/webhooks/verifying.md)
+* [API reference](backend/api-reference/README.md)
+<!-- BEGIN generated: api-reference -->
+  * [Overview](backend/api-reference/README.md)
+  * [Discovery](backend/api-reference/discovery.md)
+  * [Quotes and payments](backend/api-reference/payments.md)
+  * [Batch payouts](backend/api-reference/batches.md)
+  * [Balance and wallets](backend/api-reference/balance.md)
+  * [Deposits](backend/api-reference/deposits.md)
+  * [Withdrawals and off-ramps](backend/api-reference/withdrawals.md)
+  * [Recipients](backend/api-reference/recipients.md)
+  * [Team and API keys](backend/api-reference/team.md)
+  * [Webhooks](backend/api-reference/webhooks.md)
+  * [Email notifications](backend/api-reference/notifications.md)
+  * [Statements](backend/api-reference/statements.md)
+  * [Sandbox tools](backend/api-reference/sandbox.md)
+  * [Error codes](backend/api-reference/errors.md)
+  * [Shared types](backend/api-reference/types.md)
+<!-- END generated: api-reference -->
 * [Errors](backend/reference/errors.md)
 * [Rate limits](backend/reference/rate-limits.md)
 

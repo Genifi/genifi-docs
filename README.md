@@ -1,9 +1,9 @@
 # genifi-docs
 
-Public documentation for the Genifi cross-border payment rail — the API and the
+Public documentation for the JET cross-border payment rail — the API and the
 dashboard.
 
-**Live site:** https://docs.genifi.io
+**Live site:** https://docs.jet.money
 
 Built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) and
 deployed to GitHub Pages on every push to `main`.
@@ -15,8 +15,10 @@ docs/
   README.md          Landing page
   SUMMARY.md         GitBook nav (not part of the MkDocs build)
   CNAME              Custom domain for GitHub Pages
-  backend/           API documentation — 24 pages
-  dashboard/         Dashboard guides — 14 pages
+  backend/           API guides and concepts, written by hand
+  backend/api-reference/
+                     The API reference — GENERATED, do not edit (see below)
+  dashboard/         Dashboard guides
 mkdocs.yml           Site config and navigation
 requirements.txt     Pinned build dependencies
 ```
@@ -56,7 +58,7 @@ Request/response pairs use content tabs:
 === "Request"
 
     ```bash
-    curl "$GENIFI_API/health"
+    curl "$JET_API/health"
     ```
 
 === "200 OK"
@@ -71,20 +73,54 @@ Link between pages with relative paths including the `.md` extension
 
 ## Keeping it accurate
 
-These pages are written against the real API contract, not summarised from
-prose. The things most likely to drift:
+### The API reference is generated
+
+`docs/backend/api-reference/` is generated from the backend's source code, along
+with the nav block between the `BEGIN/END generated: api-reference` markers in
+`mkdocs.yml` and `docs/SUMMARY.md`. **Do not edit those by hand**; the next run
+overwrites them. From a checkout of the backend next to this repo:
+
+```bash
+cd ../backend
+pnpm api:reference            # regenerate into ../genifi-docs
+pnpm api:reference --check    # fail if anything is out of date
+```
+
+What it reads:
+
+| In the reference | Comes from |
+|---|---|
+| Which endpoints exist | The API's live route table |
+| Request fields and their rules | The Zod schemas the handlers parse |
+| Response bodies, `error` codes per status | The TypeScript types of what each handler sends |
+| Permission, roles, KYB gate | The gates each handler calls, and `can()` |
+| Auth, rate-limit bucket and sizes | The API's auth and rate-limit code |
+| Summaries, grouping, field notes | `apps/api/src/reference/catalog.ts` in the backend |
+| Webhook event list | The same catalog, type-checked against the event type |
+
+The backend's test suite fails when a route is added, removed or renamed without
+a catalog entry, and when its committed `docs/api/openapi.json` is stale. So the
+reference cannot silently fall behind the code; it can only be not yet
+regenerated here. Regenerate when you update the docs for a release.
+
+### The guides are written by hand
+
+They explain; the reference specifies. Keep field lists and error tables out of
+the guides where the reference already has them, and link to it instead. What
+still drifts by hand:
 
 | If this changes | Update |
 |---|---|
 | Currency scales | `docs/backend/concepts/money.md` |
-| Corridor list | `docs/backend/concepts/corridors.md` |
-| Rate-limit defaults | `docs/backend/reference/rate-limits.md` |
-| Role permissions | `docs/backend/getting-started/authentication.md`, `docs/dashboard/guides/team-and-roles.md` |
-| Webhook events | `docs/backend/webhooks/events.md`, `docs/backend/api/notifications.md` |
-| An endpoint leaving `501` | `docs/backend/api/wallets-and-accounts.md`, `docs/dashboard/reference/feature-availability.md` |
+| Payment states | `docs/backend/concepts/payment-lifecycle.md` |
+| Webhook payload shapes | `docs/backend/webhooks/events.md` |
+| Role descriptions | `docs/backend/getting-started/authentication.md`, `docs/dashboard/guides/team-and-roles.md` |
+
+`validation: anchors` in `mkdocs.yml` makes a link to a heading that no longer
+exists fail the build, including the reference's links into the guides.
 
 ## GitBook
 
 `.gitbook.yaml` points at `docs/`, so the GitBook space can stay in sync off the
-same files. It is a fallback, not the published site — `docs.genifi.io` is
+same files. It is a fallback, not the published site — `docs.jet.money` is
 served by GitHub Pages.

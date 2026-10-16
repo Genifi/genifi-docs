@@ -1,6 +1,6 @@
 # Verifying signatures
 
-Every delivery is signed. Verify it before you trust it — an unverified webhook
+Every delivery is signed. Verify it before you trust it: an unverified webhook
 endpoint is a public API that lets anyone tell your system that a payment
 settled.
 
@@ -10,15 +10,15 @@ settled.
 signature = "sha256=" + HMAC_SHA256(secret, timestamp + "." + rawBody)
 ```
 
-* `secret` — the `whsec_…` value returned when you registered the endpoint
-* `timestamp` — the `X-Genifi-Timestamp` header, Unix **seconds**
-* `rawBody` — the exact bytes of the request body, before parsing
-* Result — lowercase hex, prefixed `sha256=`, sent as `X-Genifi-Signature`
+* `secret`: the `whsec_…` value returned when you registered the endpoint
+* `timestamp`: the `X-Jet-Timestamp` header, Unix **seconds**
+* `rawBody`: the exact bytes of the request body, before parsing
+* Result: lowercase hex, prefixed `sha256=`, sent as `X-Jet-Signature`
 
 ## Why the timestamp is inside the signature
 
-A signature over the body alone proves only that Genifi produced that payload at
-*some* point — not that we produced it *now*.
+A signature over the body alone proves only that JET produced that payload at
+*some* point, not that we produced it *now*.
 
 Anyone who captures one delivery (a logging proxy, a misconfigured TLS
 terminator, a compromised intermediary) could resend those exact bytes with that
@@ -27,7 +27,7 @@ difference. For transaction events, that is a way to make your system believe a
 payment settled repeatedly.
 
 Binding the timestamp into the signed message means the timestamp cannot be
-edited without invalidating the signature — which is what lets you reject
+edited without invalidating the signature, which is what lets you reject
 anything older than your tolerance window. It is the same construction Stripe and
 GitHub use, for the same reason.
 
@@ -35,7 +35,7 @@ GitHub use, for the same reason.
 
 1. **Recompute** the HMAC from the raw body and the header timestamp.
 2. **Compare in constant time.** A plain `===` leaks, through timing, how many
-   leading characters matched — enough to forge a signature byte by byte given
+   leading characters matched: enough to forge a signature byte by byte given
    enough attempts.
 3. **Check the timestamp is recent.** Five minutes is a reasonable tolerance.
 
@@ -84,16 +84,16 @@ const app = express();
 // The RAW body, not the parsed one. Re-serializing JSON changes bytes
 // and breaks verification.
 app.post(
-  "/genifi",
+  "/jet",
   express.raw({ type: "application/json" }),
   (req, res) => {
     const raw = req.body.toString("utf8");
 
     const ok = verify(
       raw,
-      String(req.header("x-genifi-signature")),
-      String(req.header("x-genifi-timestamp")),
-      process.env.GENIFI_WEBHOOK_SECRET!,
+      String(req.header("x-jet-signature")),
+      String(req.header("x-jet-timestamp")),
+      process.env.JET_WEBHOOK_SECRET!,
     );
     if (!ok) return res.sendStatus(401);
 
@@ -170,7 +170,7 @@ page has one built in.
 kills the old one. If verification suddenly fails everywhere, check that first.
 
 **Rejecting duplicates as invalid.** A repeated `deliveryId` is expected
-behaviour, not an attack. Return `200` and move on — see
+behaviour, not an attack. Return `200` and move on: see
 [Webhooks](README.md#delivery-guarantees).
 
 ## Rotating the secret
@@ -178,10 +178,10 @@ behaviour, not an attack. Return `200` and move on — see
 Register the same URL again:
 
 ```bash
-curl -X PUT "$GENIFI_API/webhooks/endpoint" \
-  -H "Authorization: Bearer $GENIFI_API_KEY" \
+curl -X PUT "$JET_API/webhooks/endpoint" \
+  -H "Authorization: Bearer $JET_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{ "url": "https://hooks.northwind.example/genifi" }'
+  -d '{ "url": "https://hooks.northwind.example/jet" }'
 ```
 
 A fresh secret comes back and the old one stops working immediately. There is no

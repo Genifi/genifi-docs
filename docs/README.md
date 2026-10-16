@@ -1,17 +1,17 @@
 ---
 description: >-
-  Genifi is a cross-border payment rail. You send a stablecoin amount; your
+  JET is a cross-border payment rail. You send a stablecoin amount; your
   recipient is paid in their local currency.
 ---
 
-# Genifi Documentation
+# JET Documentation
 
-Genifi moves value across borders for regulated businesses. Value travels as a
+JET moves value across borders for regulated businesses. Value travels as a
 stablecoin and lands as **local fiat**, disbursed by a licensed partner in the
 destination country. The recipient never holds, receives, or needs to know about
 a stablecoin.
 
-You keep the relationship with your end users and you own their KYC. Genifi
+You keep the relationship with your end users and you own their KYC. JET
 verifies you, and provides the corridor.
 
 ## Two ways to use it
@@ -22,7 +22,7 @@ verifies you, and provides the corridor.
 
     ---
 
-    Integrate Genifi into your own systems. Quotes, payments, webhooks, and the
+    Integrate JET into your own systems. Quotes, payments, webhooks, and the
     full endpoint reference.
 
     [:octicons-arrow-right-24: Read the API docs](backend/README.md)
@@ -43,7 +43,7 @@ verifies you, and provides the corridor.
 takes you from an API key to a settled payment in six steps. Then read
 [Idempotency](backend/concepts/idempotency.md) and
 [How a payment works](backend/concepts/payment-lifecycle.md) before you write
-production code — they cover the two things integrations most often get wrong.
+production code: they cover the two things integrations most often get wrong.
 
 **Using the dashboard?** [Signing in](dashboard/getting-started/signing-in.md),
 then [Send a payment](dashboard/guides/send-a-payment.md). Want to look around
@@ -51,7 +51,7 @@ first, with no account? [Demo mode](dashboard/getting-started/demo-mode.md).
 
 ## What to expect
 
-A few properties run through everything Genifi does. They explain choices that
+A few properties run through everything JET does. They explain choices that
 might otherwise look strange.
 
 **Money is never a JSON number.** You send decimal strings; we return integer
@@ -66,7 +66,7 @@ the same request ten times and there is one payment.
 **We fail closed and never fake success.** If we cannot tell whether funds moved,
 the payment is parked for reconciliation rather than optimistically marked
 complete. If a feature is not wired up on your environment, you get a `501` with
-a reason — not an empty list, not a plausible stub.
+a reason: not an empty list, not a plausible stub.
 → [Environments](backend/getting-started/environments.md)
 
 **A payment is done when it is reconciled.** `Paid out` means the recipient has
