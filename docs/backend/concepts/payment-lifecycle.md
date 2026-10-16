@@ -5,7 +5,7 @@ description: What happens after your POST returns, and how to read the states.
 # How a payment works
 
 `POST /transactions` returns `202 Accepted` in a few hundred milliseconds. That
-response does not mean the payment finished — it means the payment **started**,
+response does not mean the payment finished: it means the payment **started**,
 as a durable process that will run to completion on our side without further
 input from you.
 
@@ -23,19 +23,21 @@ INITIATED → QUOTED → FUNDED → ROUTING → SETTLING → PAID_OUT → RECONC
 |---|---|
 | `INITIATED` | Your request was validated and recorded. Nothing has moved. |
 | `QUOTED` | A price is locked, with a time-to-live. |
-| `FUNDED` | Funds have left your wallet and are held by Genifi. |
+| `FUNDED` | Funds have left your wallet and are held by JET. |
 | `ROUTING` | A route is chosen and the crossing has begun. |
 | `SETTLING` | The payout instruction is with the local partner; we are waiting for confirmation. |
 | `PAID_OUT` | The local partner confirms the recipient has been paid. |
 | `RECONCILED` | Our ledger, the chain, and the provider's records all agree. **The payment is now done.** |
 
-### Failure branches
+### When it does not go straight through
 
 | State | What has happened |
 |---|---|
-| `FAILED` | The payment stopped before funds moved, or after a clean unwind. |
-| `REFUNDING` | A step failed after funds moved; earlier steps are being reversed. |
-| `REFUNDED` | The unwind completed. You have your money back. |
+| `FAILED` | The payment stopped **before** any of your funds moved. Nothing to undo. |
+| `PENDING_RETRY` | Your funds have moved, but the payout could not be made yet. It is retried on a backoff, automatically. |
+| `NEEDS_ATTENTION` | Retries are exhausted and the payment is waiting for our operations team. The funds are held and accounted for: not paid out, and not returned. |
+| `REFUNDING` | The payment was cancelled; the full amount is on its way back to your home wallet. |
+| `REFUNDED` | The full amount is back in your home wallet. |
 | `IN_DOUBT` | We cannot currently tell whether funds moved. Parked for reconciliation. |
 
 ## Two states people get wrong
@@ -47,8 +49,8 @@ final amount differs from the one you recorded. Wait for `RECONCILED`.
 
 **`IN_DOUBT` is not a failure.** It means the honest answer is "we don't know
 yet". A payment reaches it when a provider call times out, or a response is
-ambiguous, and we would rather park it than guess. Genifi re-queries the provider
-on a schedule and the payment resumes on its own — it will end up in a terminal
+ambiguous, and we would rather park it than guess. JET re-queries the provider
+on a schedule and the payment resumes on its own: it will end up in a terminal
 state without you doing anything. Show it to your operations team; do not retry
 the payment, and do not tell your customer it failed.
 
@@ -58,32 +60,29 @@ the payment, and do not tell your customer it failed.
     treat the payment as in doubt and reconcile, rather than assuming success. A
     system that guesses is a system that eventually double-pays.
 
-## Compensation
+## A funded payment does not refund itself
 
-Every step that moves funds registers a way to reverse itself. If a later step
-fails, the earlier ones unwind — which is what `REFUNDING → REFUNDED` is.
+Once your funds have moved, a payment that cannot be paid out is **not** sent
+back automatically. It retries (`PENDING_RETRY`), and if retrying does not
+succeed it waits for a person (`NEEDS_ATTENTION`). A payment that can still be
+paid should be paid, and a refund issued too eagerly is a refund of money that
+was about to arrive.
 
-The guarantee is that a failed payment ends in a *marked* terminal state, never
-half-unwound and silent. If the unwind itself cannot complete cleanly, the
-payment lands in `IN_DOUBT` for a human, rather than being left ambiguous.
+Our operations team then either retries the payout or cancels the payment. A
+cancel always returns the **full** amount to your home wallet
+(`REFUNDING → REFUNDED`); there are no partial refunds.
 
-## Regular and instant payouts
+Every attempt that fails undoes its own bookkeeping immediately, so nothing is
+half-unwound in between. If an unwind itself cannot complete cleanly, the
+payment lands in `IN_DOUBT` for a human, never in a silent, ambiguous state.
 
-`payoutMode` on `POST /transactions` chooses between two ways of paying the
-recipient.
+## Payout mode
 
-| Mode | Behaviour |
-|---|---|
-| `regular` (default) | The recipient is paid once the settling legs complete. Cheaper, slower. |
-| `instant` | The recipient is paid immediately out of pre-positioned local liquidity, while the settling legs catch up behind. |
-
-`instant` is a *request*, not a guarantee. It applies only where the corridor
-supports it (check `instant` in [`/capabilities`](../getting-started/environments.md))
-and only when there is enough local liquidity at that moment. If either condition
-fails, the payment proceeds the regular way and nothing breaks.
-
-Read back what actually happened from `payoutMode` in the status response — do
-not assume the mode you asked for is the mode you got.
+Every payment is paid the `regular` way: the recipient is paid once the
+settling legs complete. `payoutMode: "instant"` is still accepted on
+`POST /transactions`, so older integrations keep working, but it runs as
+`regular`. Instant payout would need money pre-positioned in the destination
+country, and JET holds none.
 
 ## Payout deltas
 
@@ -95,7 +94,7 @@ The status response may include a `payoutDelta`:
 
 It is present **only** when the amount the provider confirms paying differed from
 the amount the executing route quoted. Its absence means promised and paid agreed
-exactly — so you can branch on whether the field exists, without parsing it.
+exactly, so you can branch on whether the field exists, without parsing it.
 
 ## Reading the timeline
 
@@ -105,7 +104,7 @@ passed through, in order, with optional detail:
 ```json
 "timeline": [
   { "state": "INITIATED" },
-  { "state": "QUOTED", "detail": "locked qte_8b3d…" },
+  { "state": "QUOTED", "detail": "locked q_3d6e9932…" },
   { "state": "FUNDED" },
   { "state": "ROUTING" },
   { "state": "SETTLING" },
@@ -119,8 +118,9 @@ It is the right thing to render in a customer-facing payment tracker. Treat
 
 ## Where to get updates
 
-* **[Webhooks](../webhooks/README.md)** — recommended. We push each transition to
+* **[Webhooks](../webhooks/README.md)**: recommended. We push each transition to
   you, signed and retried.
-* **[Polling](../api/transactions.md#get-transactionsid)** — fine for a first
+* **[Polling](../api/transactions.md#get-transactionsid)**: fine for a first
   integration. Poll on a couple of seconds while `running` is `true`; stop once
-  the state is terminal.
+  the state is terminal (`RECONCILED`, `REFUNDED`, `FAILED`) or needs a person
+  (`IN_DOUBT`, `NEEDS_ATTENTION`).

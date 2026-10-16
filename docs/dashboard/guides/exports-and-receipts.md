@@ -28,7 +28,7 @@ Without it, "Nguyễn" arrives mangled.
 Amounts are in the currency shown in the column header. Timestamps are UTC.
 
 If you are reconciling against your own ledger, join on the **recipient
-reference** or the **transaction ID** — both are in the export and both are
+reference** or the **transaction ID**: both are in the export and both are
 stable.
 
 ## Receipts
@@ -41,7 +41,7 @@ the state, and the timestamps.
 
 ## Printing
 
-Printable views are laid out for paper — proper page breaks, and table headers
+Printable views are laid out for paper: proper page breaks, and table headers
 repeated on each page, so a long list stays readable after page one.
 
 Use your browser's print dialog. "Save as PDF" from there produces a clean file.
@@ -57,7 +57,7 @@ export.
 !!! info
 
     This is not adjustable, and that is the point. A document that could pass for a
-    record of a real payment is a document that will eventually be mistaken for one —
+    record of a real payment is a document that will eventually be mistaken for one:
     in an audit, an expense claim, or a customer dispute.
 
 ## What exports are not
@@ -66,7 +66,7 @@ An export is a **snapshot** of what the dashboard showed at that moment.
 
 For payments still in flight, the state in the file is the state at export time.
 For anything that has to be exactly right, re-export once the payments have
-reached **Reconciled** — that is when the final amounts are settled.
+reached **Reconciled**: that is when the final amounts are settled.
 
 Exports are also not a substitute for your own books. They are a convenience for
 reading and reconciling, not a system of record.

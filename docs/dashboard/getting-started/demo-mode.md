@@ -1,6 +1,6 @@
 # Demo mode
 
-Demo mode is a fully interactive Genifi Dashboard, populated with sample data,
+Demo mode is a fully interactive JET Dashboard, populated with sample data,
 that requires no account, no API key, and no backend.
 
 It is the right way to evaluate the product, run a walkthrough, or explore the
@@ -8,9 +8,9 @@ interface before your environment is provisioned.
 
 ## Getting in
 
-On the sign-in screen, click **Explore the demo — no API key needed**.
+On the sign-in screen, click **Explore the demo**.
 
-Some deployments — an evaluation link, for instance — are built as demo-only and
+Some deployments (an evaluation link, for instance) are built as demo-only and
 open straight into it.
 
 ## Getting out
@@ -65,7 +65,7 @@ Demo mode is genuinely good for this:
 * Sample data is stable and sensible, so the story is the same every time
 * It works with no network access to a backend
 
-Reset by reloading the page — state lives in the browser session.
+Reset by reloading the page: state lives in the browser session.
 
 ## Demo mode and live mode never mix
 

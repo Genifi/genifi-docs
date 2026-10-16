@@ -5,13 +5,13 @@ committing. It starts nothing and moves nothing.
 
 ## POST /quotes
 
-Requires the `payment.initiate` permission — a `viewer` cannot fish for prices.
+Requires the `payment.initiate` permission: a `viewer` cannot fish for prices.
 
 === "Request"
 
     ```bash
-    curl -X POST "$GENIFI_API/quotes" \
-      -H "Authorization: Bearer $GENIFI_API_KEY" \
+    curl -X POST "$JET_API/quotes" \
+      -H "Authorization: Bearer $JET_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "corridor": { "to": "VND", "destinationCountry": "VN" },
@@ -24,14 +24,19 @@ Requires the `payment.initiate` permission — a `viewer` cannot fish for prices
 
     ```json
     {
-      "quoteId": "qte_8b3d…",
+      "quoteId": "q_3d6e9932-61c7-49cb-9259-9703dabf3cdc",
       "sendAmount": { "amount": "1000000000", "currency": "USDC", "scale": 6 },
-      "receiveAmount": { "amount": "24512750", "currency": "VND", "scale": 0 },
-      "fee": { "amount": "4200000", "currency": "USDC", "scale": 6 },
-      "rate": { "pair": "USDC/VND", "value": "24512.75" },
-      "provider": "owned-vn",
-      "routeKind": "owned",
-      "estimatedSeconds": 45,
+      "receiveAmount": { "amount": "24904406", "currency": "VND", "scale": 0 },
+      "fee": { "amount": "0", "currency": "VND", "scale": 0 },
+      "rate": {
+        "from": "USDC",
+        "to": "VND",
+        "numerator": "24929336132594337",
+        "denominator": "1000000000000"
+      },
+      "provider": "tazapay",
+      "routeKind": "orchestrator",
+      "estimatedSeconds": 300,
       "expiresAt": "2026-08-21T14:03:11.000Z"
     }
     ```
@@ -45,29 +50,20 @@ Requires the `payment.initiate` permission — a `viewer` cannot fish for prices
     }
     ```
 
-### Request body
+Every field, with its rules, is in the
+[API reference](../api-reference/payments.md#post-quotes). The ones that need
+explaining:
 
-| Field | Type | Required | Notes |
-|---|---|:---:|---|
-| `corridor.to` | string | ✅ | Destination currency, e.g. `"VND"` |
-| `corridor.destinationCountry` | string(2) | ✅ | ISO country code, e.g. `"VN"` |
-| `sendAmount.amount` | decimal string | ✅ | e.g. `"1000.00"`. Never a JSON number |
-| `sendAmount.currency` | string | ✅ | e.g. `"USDC"` |
-| `idempotencyKey` | string | — | The key of the payment you intend to make. See below |
-
-### Response
-
-| Field | Type | Notes |
-|---|---|---|
-| `quoteId` | string | Single-use. Pass to `POST /transactions` to execute at this price |
-| `sendAmount` | Money | Echoed, in integer minor units |
-| `receiveAmount` | Money | **What the recipient gets**, floored to whole destination units |
-| `fee` | Money | The winning route's disclosed fee |
-| `rate` | object | The effective end-to-end rate, send → receive |
-| `provider` | string | Opaque route label, for support and reconciliation |
-| `routeKind` | `"orchestrator"` \| `"owned"` | Whether Genifi runs this corridor end to end |
-| `estimatedSeconds` | number | Expected time to payout |
-| `expiresAt` | ISO 8601 | After this the quote can no longer be accepted |
+| Field | Notes |
+|---|---|
+| `idempotencyKey` | Optional. The key of the payment you intend to make. See below |
+| `integratorWalletId` | Optional. Quotes are priced for your home wallet; if you name a wallet, it must be that one |
+| `receiveAmount` | **What the recipient gets**, floored to whole destination units |
+| `fee` | The winning route's disclosed fee |
+| `rate` | The exchange rate as an exact fraction: one whole unit of `from` buys `numerator / denominator` whole units of `to`. Never a float. Fees and rounding sit between it and `receiveAmount` |
+| `networkFee` | Present when the payment has to cross to another network to reach the rail. Already deducted from what the recipient gets |
+| `provider` | Opaque route label, for support and reconciliation |
+| `expiresAt` | After this the quote can no longer be accepted |
 
 Show `receiveAmount` to your customer. It is the number they care about, and it
 is the number that will land.
@@ -79,7 +75,7 @@ quote. It is a real lock, not a hint: accept before it, and the payment executes
 at exactly this price.
 
 Accept after it and the payment fails cleanly, **before any money moves**. That
-is the intended behaviour — re-quote and show the customer the new number rather
+is the intended behaviour: re-quote and show the customer the new number rather
 than silently executing at a price they never saw.
 
 ## Accepting a quote
@@ -89,10 +85,9 @@ Pass `quoteId` on the payment:
 ```json
 {
   "idempotencyKey": "pay-2026-08-21-0001",
-  "quoteId": "qte_8b3d…",
+  "quoteId": "q_3d6e9932-61c7-49cb-9259-9703dabf3cdc",
   "corridor": { "to": "VND", "destinationCountry": "VN" },
   "sendAmount": { "amount": "1000.00", "currency": "USDC" },
-  "integratorWalletId": "wal_your_wallet",
   "recipientReference": "customer-4471"
 }
 ```
@@ -115,12 +110,14 @@ at a number.
 
 ## Errors
 
-| Code | Meaning |
-|---|---|
-| `403 forbidden` | Your role may not request quotes |
-| `422 quote_unavailable` | The corridor could not be priced right now. Retry shortly |
-| `400 validation` | Malformed body, or an over-precise amount |
+| Status | `error` | Meaning |
+|---|---|---|
+| `400` | `validation` | Malformed body, or an over-precise amount |
+| `403` | `forbidden` | Your role may not request quotes, or you named a wallet that is not yours |
+| `422` | `quote_unavailable` | The corridor could not be priced right now. Retry shortly |
+| `422` | `no_route_for_chain` | No rail can be funded from your balance's network. Retrying will not help; contact us |
+| `422` | `not_home_wallet` | You named a wallet that is not your home wallet. Omit `integratorWalletId` |
 
-A `422` is client-actionable and carries no internal detail. It usually means a
-pricing source is momentarily unavailable, not that the corridor is closed —
-check `/capabilities` if you need to tell the two apart.
+`quote_unavailable` carries no internal detail. It usually means a pricing
+source is momentarily unavailable, not that the corridor is closed: check
+`/capabilities` if you need to tell the two apart.

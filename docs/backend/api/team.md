@@ -1,6 +1,6 @@
 # Team and API keys
 
-Your organization is a team. Each member has a role that gates what they may do —
+Your organization is a team. Each member has a role that gates what they may do:
 see [Authentication](../getting-started/authentication.md#roles) for the full
 permission table.
 
@@ -11,7 +11,7 @@ Requires `member.read` (admin or owner).
 === "Request"
 
     ```bash
-    curl "$GENIFI_API/members" -H "Authorization: Bearer $GENIFI_API_KEY"
+    curl "$JET_API/members" -H "Authorization: Bearer $JET_API_KEY"
     ```
 
 === "200 OK"
@@ -43,8 +43,8 @@ Invite someone. Requires `member.invite` (admin or owner).
 === "Request"
 
     ```bash
-    curl -X POST "$GENIFI_API/members/invitations" \
-      -H "Authorization: Bearer $GENIFI_API_KEY" \
+    curl -X POST "$JET_API/members/invitations" \
+      -H "Authorization: Bearer $JET_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "email": "sam@northwind.example",
@@ -90,7 +90,7 @@ Invite someone. Requires `member.invite` (admin or owner).
 ### The invite token goes to the invitee, and to nobody else
 
 The response tells you a member was created and whether the email went out. It
-does **not** contain the invite token — not even for the person who sent the
+does **not** contain the invite token, not even for the person who sent the
 invite. The token is a credential for someone else's account.
 
 `emailDelivered: false` means the invitation stands but nobody was told. Use the
@@ -99,7 +99,7 @@ resend endpoint below.
 ### Privilege escalation is blocked
 
 You may only grant a role you are allowed to manage. An `admin` cannot mint
-another `admin` — only an `owner` can.
+another `admin`; only an `owner` can.
 
 ```json
 { "error": "forbidden", "message": "your role may not grant the role 'admin'" }
@@ -110,8 +110,8 @@ another `admin` — only an `owner` can.
 Resend an outstanding invitation on a **fresh** token. The old token dies.
 
 ```bash
-curl -X POST "$GENIFI_API/members/mem_a204/invitations" \
-  -H "Authorization: Bearer $GENIFI_API_KEY"
+curl -X POST "$JET_API/members/mem_a204/invitations" \
+  -H "Authorization: Bearer $JET_API_KEY"
 ```
 
 This is not just a convenience. Invite tokens are hashed at rest and shown once,
@@ -128,7 +128,7 @@ The one write an un-keyed caller may make: the invite token *is* the credential.
 === "Request"
 
     ```bash
-    curl -X POST "$GENIFI_API/invitations/accept" \
+    curl -X POST "$JET_API/invitations/accept" \
       -H "Content-Type: application/json" \
       -d '{ "token": "inv_…" }'
     ```
@@ -163,8 +163,8 @@ role, distinct from the organization's root key.
 Change a member's role. Requires `member.manage`.
 
 ```bash
-curl -X PATCH "$GENIFI_API/members/mem_a204" \
-  -H "Authorization: Bearer $GENIFI_API_KEY" \
+curl -X PATCH "$JET_API/members/mem_a204" \
+  -H "Authorization: Bearer $JET_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{ "role": "admin" }'
 ```
@@ -176,8 +176,8 @@ The same escalation rule applies: you cannot set a role you may not grant.
 Revoke a member, or rescind an invitation that was never accepted.
 
 ```bash
-curl -X DELETE "$GENIFI_API/members/mem_a204" \
-  -H "Authorization: Bearer $GENIFI_API_KEY"
+curl -X DELETE "$JET_API/members/mem_a204" \
+  -H "Authorization: Bearer $JET_API_KEY"
 ```
 
 ```json
@@ -195,12 +195,12 @@ credential stops working.
 Rotate **your own** personal key. Available to any active member.
 
 ```bash
-curl -X POST "$GENIFI_API/members/me/api-key" \
-  -H "Authorization: Bearer $GENIFI_API_KEY"
+curl -X POST "$JET_API/members/me/api-key" \
+  -H "Authorization: Bearer $JET_API_KEY"
 ```
 
 ```json
-{ "apiKey": "gk_new…", "member": { "…": "…" }, "rotatedAt": "2026-08-21T15:10:00.000Z" }
+{ "apiKey": "gk_new…", "member": { "…": "…" } }
 ```
 
 Calling it with the **organization root key** returns `409`, because the
@@ -220,8 +220,8 @@ Use the endpoint below instead.
 Rotate the **organization's** root key. Owner only.
 
 ```bash
-curl -X POST "$GENIFI_API/api-keys/rotate" \
-  -H "Authorization: Bearer $GENIFI_API_KEY"
+curl -X POST "$JET_API/api-keys/rotate" \
+  -H "Authorization: Bearer $JET_API_KEY"
 ```
 
 ```json
@@ -230,7 +230,7 @@ curl -X POST "$GENIFI_API/api-keys/rotate" \
 
 !!! danger
 
-    The old key — the one that authenticated this very request — is dead the moment
+    The old key, the one that authenticated this very request, is dead the moment
     this responds. The new key is shown once and there is no way to read it back.
     Store it before you do anything else, and deploy it before you rotate if you
     cannot tolerate a gap.

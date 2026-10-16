@@ -1,12 +1,12 @@
 ---
 description: >-
-  The Genifi API moves value across borders for your customers and delivers
+  The JET API moves value across borders for your customers and delivers
   local fiat to the recipient.
 ---
 
-# Genifi API
+# JET API
 
-Genifi is a cross-border payment rail for regulated businesses. You send a
+JET is a cross-border payment rail for regulated businesses. You send a
 stablecoin amount; your recipient is paid in their **local currency**, through a
 licensed local payout channel in the destination country.
 
@@ -16,8 +16,8 @@ The recipient never holds, receives, or needs to know about a stablecoin.
 
 !!! info
 
-    **Genifi is a business-to-business rail.** You keep the relationship with your
-    end users and you own their KYC. Genifi verifies **you** (KYB) and provides the
+    **JET is a business-to-business rail.** You keep the relationship with your
+    end users and you own their KYC. JET verifies **you** (KYB) and provides the
     corridor.
 
 ## What you can do with it
@@ -26,6 +26,9 @@ The recipient never holds, receives, or needs to know about a stablecoin.
 |---|---|
 | **Price a payment** | Get a firm, rate-locked quote before committing to anything. |
 | **Send a payment** | One authenticated call starts a durable payment that runs to completion on its own. |
+| **Send a batch** | Up to 1,000 payments in one instruction, funded in a single transfer. |
+| **Fund your balance** | Wire EUR or USD, pay BRL by PIX, or send USDC on chain. |
+| **Take money out** | Withdraw USDC to your own wallet, or off-ramp to a bank account. |
 | **Track it** | Poll a status endpoint, or receive signed webhooks on every state change. |
 | **Manage recipients** | Save payees once, reuse them across payments. |
 | **Manage your team** | Invite colleagues, assign roles, rotate your API key. |
@@ -34,15 +37,15 @@ The recipient never holds, receives, or needs to know about a stablecoin.
 ## The shortest possible example
 
 ```bash
-curl -X POST "$GENIFI_API/transactions" \
-  -H "Authorization: Bearer $GENIFI_API_KEY" \
+curl -X POST "$JET_API/transactions" \
+  -H "Authorization: Bearer $JET_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "idempotencyKey": "pay-2026-08-21-0001",
     "corridor": { "to": "VND", "destinationCountry": "VN" },
     "sendAmount": { "amount": "1000.00", "currency": "USDC" },
-    "integratorWalletId": "wal_your_wallet",
-    "recipientReference": "customer-4471"
+    "recipientReference": "customer-4471",
+    "beneficiary": { "name": "NGUYEN VAN A", "account": "0123456789", "bic": "BFTVVNVX", "country": "VN" }
   }'
 ```
 
@@ -51,8 +54,8 @@ curl -X POST "$GENIFI_API/transactions" \
 ```
 
 That `202 Accepted` means the payment is now running as a durable process on our
-side. It will keep going — retrying providers, posting to our ledger, and, if
-something goes wrong, unwinding itself — whether or not your process is still
+side. It will keep going (retrying providers, posting to our ledger, and, if
+something goes wrong, unwinding itself) whether or not your process is still
 alive. You find out how it ended by [polling](api/transactions.md#get-transactionsid)
 or by [webhook](webhooks/README.md).
 
@@ -71,7 +74,7 @@ mode. See [Amounts and currencies](concepts/money.md).
 you like; you get one payment. See [Idempotency](concepts/idempotency.md).
 
 **We fail closed and we never fake success.** If a feature is not wired up on
-your environment, the endpoint returns `501` with a machine-readable reason —
+your environment, the endpoint returns `501` with a machine-readable reason:
 not an empty list, not a plausible-looking stub. If we cannot tell whether funds
 moved, the payment goes to `IN_DOUBT` and is reconciled rather than optimistically
 marked complete.
@@ -85,4 +88,6 @@ against what is actually available instead of hard-coding assumptions.
 * New here? Start with the [Quickstart](getting-started/quickstart.md).
 * Integrating properly? Read [How a payment works](concepts/payment-lifecycle.md)
   and [Idempotency](concepts/idempotency.md) before writing code.
-* Looking for a specific endpoint? Jump to the [API reference](api/conventions.md).
+* Looking for a specific endpoint? The [API reference](api-reference/README.md)
+  lists every one, generated from the API's source code, and is also available as
+  an [OpenAPI document](api-reference/openapi.json).

@@ -6,7 +6,7 @@
 2. Enter your **work email**.
 3. Open the email we send and click the link.
 
-That's it — no password to choose, forget, or reuse.
+That's it: no password to choose, forget, or reuse.
 
 Where your organization has it enabled, **Continue with Google** works too, for
 the same email address.
@@ -26,7 +26,7 @@ inviting.
 ## Your session
 
 Signing in sets a secure session cookie in your browser. It is scoped to you as a
-person — which is what makes per-user features like
+person, which is what makes per-user features like
 [email notifications](../guides/notifications.md) possible.
 
 Signing out ends it. Signing in on another device gives you a separate session;
@@ -38,15 +38,15 @@ Every member has a role, set when they were invited and changeable by an admin.
 
 | | Viewer | Member | Admin | Owner |
 |---|:---:|:---:|:---:|:---:|
-| See payments and accounts | ✅ | ✅ | ✅ | ✅ |
-| See the address book | ✅ | ✅ | ✅ | ✅ |
-| Send payments | — | ✅ | ✅ | ✅ |
-| Add and edit recipients | — | ✅ | ✅ | ✅ |
-| Manage webhooks | — | — | ✅ | ✅ |
-| Invite and manage team members | — | — | ✅ | ✅ |
-| Rotate the organization API key | — | — | — | ✅ |
+| See payments and accounts | yes | yes | yes | yes |
+| See the address book | yes | yes | yes | yes |
+| Send payments | no | yes | yes | yes |
+| Add and edit recipients | no | yes | yes | yes |
+| Manage webhooks | no | no | yes | yes |
+| Invite and manage team members | no | no | yes | yes |
+| Rotate the organization API key | no | no | no | yes |
 
-Actions your role does not allow are not hidden — they are visible and disabled,
+Actions your role does not allow are not hidden: they are visible and disabled,
 so you can see what exists and know who to ask.
 
 ## Signing in with an API key
@@ -55,7 +55,7 @@ Under **Advanced** on the sign-in screen there is an option to sign in with an
 API key instead.
 
 This is for integrations and local development. An API key identifies your
-**organization**, not you — so per-user features (notification preferences) are
+**organization**, not you, so per-user features (notification preferences) are
 unavailable in that mode, because there is no person to attach them to.
 
 !!! warning
@@ -67,7 +67,7 @@ unavailable in that mode, because there is no person to attach them to.
 
 ## Just want to look around?
 
-You do not need an account. Click **Explore the demo — no API key needed** on the
+You do not need an account. Click **Explore the demo** on the
 sign-in screen. See [Demo mode](demo-mode.md).
 
 ## Trouble signing in?

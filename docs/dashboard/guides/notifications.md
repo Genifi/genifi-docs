@@ -1,7 +1,8 @@
 # Email notifications
 
-Get an email when a payment reaches a state you care about. Preferences are
-**per person**, not per organization — yours are yours.
+Get an email when a payment, deposit or bank withdrawal reaches a state you care
+about. Preferences are
+**per person**, not per organization: yours are yours.
 
 Find them in **Settings**.
 
@@ -9,30 +10,32 @@ Find them in **Settings**.
 
 | Event | Fires when |
 |---|---|
-| **Quoted** | A price has been locked |
-| **Funded** | Funds have left your wallet |
 | **Paid out** | The recipient has been paid |
-| **Reconciled** | Everything agrees — the payment is done |
-| **Refunded** | An unwind completed and the money came back |
+| **Reconciled** | Everything agrees: the payment is done |
+| **Refunded** | The payment was cancelled and the money came back |
 | **In doubt** | The outcome is ambiguous and has been parked |
+| **Deposit received** | A deposit was converted and the USDC reached your wallet |
+| **Deposit refunded** | A deposit could not be converted and was returned to the payer |
+| **Bank withdrawal paid** | A withdrawal to a bank account reached the beneficiary |
 
-If you have never changed your preferences, you are subscribed to the important
-transitions only. The chatty intermediate ones are opt-in, so nobody gets flooded
-on their first day.
+If you have never changed your preferences, you are subscribed to everything
+except **Reconciled**, which is opt-in so nobody is told twice about every
+payment. If you saved your preferences before the deposit and withdrawal emails
+existed, tick those three to start receiving them.
 
 ## What an email contains
 
 Every notification is built so you can act on it without opening the dashboard:
 
 - **The subject** leads with the status and the amounts and **ends with your
-  transaction id** — the string you paste into a search box.
-  `Genifi · Paid out · 1,000.00 USD → 24,512,750 VND · pay-2026-08-21-0001`
+  transaction id**: the string you paste into a search box.
+  `JET · Paid out · 1,000.00 USD → 24,512,750 VND · pay-2026-08-21-0001`
 - **The amounts**, grouped: what you sent, and what the recipient receives.
 - **The details**: transaction id, corridor, payout provider, payout mode, state,
   and the time **this** transition happened, always in UTC.
-- **What to do next** — one line per event. "Paid out" and "Reconciled" mean very
+- **What to do next**: one line per event. "Paid out" and "Reconciled" mean very
   different things to a ledger, and the email says which is which.
-- **View transaction** — a link straight to that payment in the dashboard.
+- **View transaction**: a link straight to that payment in the dashboard.
 
 A field we do not have is left out rather than shown as a placeholder, so nothing
 in the email is ever a guess.
@@ -40,12 +43,12 @@ in the email is ever a guess.
 Emails from a non-production environment are badged **TEST MODE** in the subject
 and at the top of the message. Never action one as a real payment.
 
-Nothing in the email loads from the network — no images, no fonts, no trackers —
+Nothing in the email loads from the network: no images, no fonts, no trackers,
 so it renders the same behind a locked-down mail gateway, and there is a full
 plain-text version for clients that strip HTML.
 
 We never put recipient details in an email. Amounts, corridor, provider and ids
-only — never a beneficiary's name, account, or address.
+only, never a beneficiary's name, account, or address.
 
 ## Choosing
 
@@ -61,21 +64,21 @@ daily.
 
 ## Verifying your address
 
-Genifi only emails **verified** addresses.
+JET only emails **verified** addresses.
 
 If yours is not verified, Settings offers to send a confirmation link. Click the
 link in that email and you are done.
 
-You cannot enter an address to verify — it is always the address on your member
-record. Otherwise this would be a way to send Genifi-branded mail to strangers.
+You cannot enter an address to verify: it is always the address on your member
+record. Otherwise this would be a way to send JET-branded mail to strangers.
 
 If verification is not available on your environment, Settings says so rather
 than offering a button that does nothing.
 
 ## If email stops arriving
 
-Settings tells you when sending to your address has been **suppressed**, and why
-— a hard bounce, for instance.
+Settings tells you when sending to your address has been **suppressed**, and why:
+a hard bounce, for instance.
 
 That is deliberate: "your address bounced" is something you can act on. Silence
 is not.
@@ -85,7 +88,8 @@ Once the underlying problem is fixed, re-verify the address to resume.
 ## Notifications are for people
 
 For **systems**, use webhooks instead: signed, retried, machine-readable
-deliveries on the same six events. See
+deliveries on every transition, including **Quoted** and **Funded**, which are
+webhook-only because they fire on every payment and need no human. See
 [API keys and webhooks](api-keys-and-webhooks.md).
 
 A good split is webhooks driving your automation, and email telling your

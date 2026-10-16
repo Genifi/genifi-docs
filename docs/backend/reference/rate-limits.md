@@ -7,7 +7,7 @@ cheap status polling can never starve your ability to send a payment.
 
 | Bucket | Routes | Burst | Sustained |
 |---|---|---:|---:|
-| `initiate` | `POST /transactions`, `POST /issuers/:issuerId/redeem` | 30 | 5 / second |
+| `initiate` | `POST /transactions`, `POST /batches` | 30 | 5 / second |
 | `write` | Every other `POST`, `PUT`, `PATCH`, `DELETE` | 60 | 10 / second |
 | `read` | Every `GET` and `HEAD` | 300 | 50 / second |
 
@@ -15,23 +15,33 @@ Each is a token bucket: **burst** is how many requests you can make back to back
 from full, and **sustained** is how fast tokens refill.
 
 At 5 payments a second sustained, one credential can start 18,000 payments an
-hour — far beyond any real corridor volume, and far below the point where a
+hour: far beyond any real corridor volume, and far below the point where a
 runaway loop does damage.
 
 ### Why `initiate` is separate
 
 `POST /transactions` is categorically more expensive than a status read. It
-writes a compliance record and starts a durable process that keeps running —
-calling providers, posting ledger entries — long after the HTTP response is sent.
+writes a compliance record and starts a durable process that keeps running,
+calling providers and posting ledger entries, long after the HTTP response is sent.
 
 Sharing a bucket with reads would let a client start thousands of payments inside
-an allowance sized for polling. `POST /issuers/:issuerId/redeem` is in the same
-bucket for the same reason: it starts a durable operation, not because it happens
-to be a `POST`.
+an allowance sized for polling.
+
+### A batch costs one token per item
+
+`POST /batches` is in the same bucket, and it is charged **one token per item**,
+not one per request: a batch starts as many payments as it has items, and the
+bucket exists to bound how many payments you start. A 30-item batch empties a full
+`initiate` bucket. Size batches to fit, or expect a `429` and retry after
+`retry-after` seconds with the same `batchId`.
+
+The defaults above are generated into the
+[API reference](../api-reference/README.md#rate-limits) from the code, as is the
+bucket each endpoint draws from.
 
 ## Headers
 
-Every authenticated response carries them — not only a `429`:
+Every authenticated response carries them, not only a `429`:
 
 ```
 ratelimit-limit: 30
@@ -84,6 +94,6 @@ rather than firing the whole batch and absorbing rejections.
 
 ## Higher limits
 
-The figures above are defaults. Per-organization limits can be raised — talk to
+The figures above are defaults. Per-organization limits can be raised: talk to
 your account contact, ideally with a `429` rate from your own metrics so the
 increase can be sized to real traffic.

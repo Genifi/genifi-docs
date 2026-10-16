@@ -1,23 +1,31 @@
-# Treasury
+# Deposits
 
-Two operations that move value without being payments: getting fiat **in** as a
-stablecoin, and converting a stablecoin holding back to fiat at par.
+Three ways to get money into your JET balance. Each one ends as USDC in your
+[home wallet](wallets-and-accounts.md):
 
-Neither has a corridor or a recipient. Both are durable operations that return
-`202` and are polled for an outcome, exactly like a payment.
+| Way in | The payer sends | Start with |
+|---|---|---|
+| [Bank wire](#get-treasurydeposit-instructions) | EUR or USD, from a bank | [`GET /treasury/deposit-instructions`](#get-treasurydeposit-instructions) |
+| [PIX](#pix-deposits) | BRL, by PIX | [`POST /treasury/onramp/pix`](#pix-deposits) |
+| [USDC on chain](#usdc-deposits) | USDC, from an exchange or a wallet | [`GET /treasury/crypto-deposit`](#usdc-deposits) |
 
-Before either, one read: **where to send the money**.
+A deposit is not a payment: it has no corridor and no recipient. Bank and PIX
+deposits are durable operations, called **on-ramps**, that you follow the same
+way as a payment. Every field is in the [API reference](../api-reference/deposits.md).
+
+Moving money is KYB-gated and needs the `treasury.move` permission; reading
+prices and lists is not.
 
 ## GET /treasury/deposit-instructions
 
-Genifi's bank details and **your reference** — everything a payer needs to wire
+JET's bank details and **your reference**: everything a payer needs to wire
 fiat in. Standing, so you can read it before starting anything.
 
 === "Request"
 
     ```bash
-    curl "$GENIFI_API/treasury/deposit-instructions" \
-      -H "Authorization: Bearer $GENIFI_API_KEY"
+    curl "$JET_API/treasury/deposit-instructions" \
+      -H "Authorization: Bearer $JET_API_KEY"
     ```
 
 === "200 OK"
@@ -28,14 +36,14 @@ fiat in. Standing, so you can read it before starting anything.
       "accounts": [
         {
           "currency": "USD",
-          "accountName": "Genifi s.r.o.",
+          "accountName": "…",
           "bankName": "Standard Chartered Bank (US)",
           "accountNumber": "3582021234001",
           "bic": "SCBLUS33XXX"
         },
         {
           "currency": "EUR",
-          "accountName": "Genifi s.r.o.",
+          "accountName": "…",
           "bankName": "Standard Chartered Bank (DE)",
           "iban": "DE89370400440532013000",
           "bic": "SCBLDEFXXXX"
@@ -64,7 +72,7 @@ fiat in. Standing, so you can read it before starting anything.
 |---|---|---|
 | `reference` | string | The code the payer quotes. **One per organization**, not per currency |
 | `accounts[].currency` | string | `USD` or `EUR` |
-| `accounts[].accountName` | string | The beneficiary. Always Genifi, never you |
+| `accounts[].accountName` | string | The beneficiary: our legal entity, never you |
 | `accounts[].bankName` | string | |
 | `accounts[].accountNumber` | string | Present for an account routed by number |
 | `accounts[].iban` | string | Present for an account routed by IBAN |
@@ -72,13 +80,13 @@ fiat in. Standing, so you can read it before starting anything.
 | `accounts[].bankAddress` | string | Where we hold one |
 
 **Only the fields we actually hold are returned.** A field we do not have is
-omitted rather than sent empty — a wire instruction gets retyped into a bank by a
+omitted rather than sent empty: a wire instruction gets retyped into a bank by a
 person, and a blank or guessed line is a payment that disappears. Likewise, a
 currency with no configured account is simply absent from `accounts`.
 
 ### The reference is the whole attribution mechanism
 
-Every customer wires to the **same** Genifi account, so the bank cannot tell one
+Every customer wires to the **same** JET account, so the bank cannot tell one
 payer from another. The reference on the transfer is the only thing that says
 whose money arrived.
 
@@ -94,7 +102,7 @@ whose money arrived.
   waiting.
 
 It is not a secret and not a credential. Quoting someone else's would credit
-*them*, which is exactly why it carries a check character — it is built to
+*them*, which is exactly why it carries a check character: it is built to
 survive a typo being caught, not to be hidden.
 
 ### Send USD to the USD account, EUR to the EUR account
@@ -105,10 +113,10 @@ tracing by hand.
 
 ### Why this read is KYB-gated
 
-Reads are otherwise open to a pending integrator — the KYB gate is on value
+Reads are otherwise open to a pending integrator; the KYB gate is on value
 moving, not on looking. This is the exception, because it is a read that *causes*
 value to move: these instructions are the mechanism by which money enters, and
-issuing them before verification means someone's wire lands in Genifi's account
+issuing them before verification means someone's wire lands in JET's account
 against an organization nobody has diligenced.
 
 !!! info "Also in the dashboard"
@@ -116,25 +124,58 @@ against an organization nobody has diligenced.
     **Deposits & Withdrawals → Your deposit details** shows the same reference and
     the same per-currency bank details, with per-field copy buttons.
 
-## POST /treasury/onramp
+## GET /treasury/onramp/quote
 
-Converts fiat you wire in into a stablecoin, delivered to a wallet address you
-control. This is how you pre-fund the wallet that later funds payments.
-
-Requires an approved KYB status — an on-ramp collects money from you, which is
-the direction with the sharpest AML exposure.
+What a wire deposit of this size costs and delivers, without starting anything.
 
 === "Request"
 
     ```bash
-    curl -X POST "$GENIFI_API/treasury/onramp" \
-      -H "Authorization: Bearer $GENIFI_API_KEY" \
+    curl "$JET_API/treasury/onramp/quote?amount=5000.00&currency=USD" \
+      -H "Authorization: Bearer $JET_API_KEY"
+    ```
+
+=== "200 OK (USD)"
+
+    ```json
+    {
+      "sent": { "amount": "500000", "currency": "USD", "scale": 2 },
+      "targetStablecoin": "USDC",
+      "feeBps": 5,
+      "deliveryFee": { "amount": "45000000", "currency": "USDC", "scale": 6 },
+      "deliveryMethod": "mint+transfer",
+      "minimum": { "amount": "2000", "currency": "USD", "scale": 2 },
+      "atPar": true,
+      "gross": { "amount": "5000000000", "currency": "USDC", "scale": 6 },
+      "fee": { "amount": "2500000", "currency": "USDC", "scale": 6 },
+      "net": { "amount": "4952500000", "currency": "USDC", "scale": 6 }
+    }
+    ```
+
+- **`minimum`** is the smallest deposit accepted. A quote below it is not an
+  error, so you can quote as the payer types; starting one is.
+- **`gross`, `fee` and `net` are exact only for USD** (`atPar: true`): USD
+  converts to USDC one for one. For EUR (`atPar: false`) they are left out,
+  because the euro rate is known only when the conversion runs. `feeBps` and
+  `deliveryFee` still tell you what will be deducted.
+- **`deliveryFee`** is the cost of getting the USDC to your wallet, deducted from
+  what you receive.
+
+## POST /treasury/onramp
+
+Opens a wire deposit. Use it when you want an ID for the deposit before the money
+is sent. A wire that arrives quoting your reference with no deposit open starts
+one by itself; see [`GET /treasury/onramps`](#get-treasuryonramps).
+
+=== "Request"
+
+    ```bash
+    curl -X POST "$JET_API/treasury/onramp" \
+      -H "Authorization: Bearer $JET_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
         "idempotencyKey": "onramp-2026-08-21-a",
-        "amount": { "amount": "50000.00", "currency": "EUR" },
-        "targetStablecoin": "USDC",
-        "destinationAddress": "0x…"
+        "amount": { "amount": "50000.00", "currency": "EUR" }
       }'
     ```
 
@@ -145,43 +186,47 @@ the direction with the sharpest AML exposure.
       "onRampId": "onramp-2026-08-21-a",
       "status": "accepted",
       "instructions": {
-        "beneficiary": "…",
+        "reference": "…",
+        "accountName": "…",
         "iban": "…",
-        "reference": "onramp-2026-08-21-a"
+        "bic": "…"
       }
     }
     ```
 
-| Field | Type | Required | Notes |
-|---|---|:---:|---|
-| `idempotencyKey` | string | yes | 8–200 chars of `[A-Za-z0-9_.:-]`. **Becomes the on-ramp ID** |
-| `amount.amount` | decimal string | yes | The fiat you will wire |
-| `amount.currency` | string | yes | e.g. `"EUR"` |
-| `targetStablecoin` | `"USDC"` | no | Defaults to `"USDC"` |
-| `destinationAddress` | string | yes | The wallet address the stablecoin credits |
+- **`idempotencyKey` becomes the on-ramp ID.** Reusing it for a different
+  deposit is `409 idempotency_key_conflict`.
+- **The USDC goes to your home wallet.** `destinationAddress` is still accepted
+  for older integrations and ignored.
+- **`instructions`** says where to send the wire and the **reference** to quote.
+  It is absent when the environment cannot produce them; the bank details and
+  reference from [`GET /treasury/deposit-instructions`](#get-treasurydeposit-instructions)
+  apply regardless.
 
-### Bank instructions
+Below the minimum is a `400`. With no home wallet to deliver to, `422
+no_home_wallet`.
 
-When the environment can produce them, the `202` includes an `instructions`
-object with where to send the wire and — critically — the **reference** to quote.
+## GET /treasury/onramps
 
-Quote it exactly. The reference is how an inbound wire is matched to the on-ramp
-you started. A wire without it, or with a mangled one, arrives unattributed and
-needs manual reconciliation.
+Your deposits, newest first, cursor-paginated (`limit` up to 500, `cursor`). Filter
+with `origin`:
 
-`instructions` is absent when the environment cannot produce them yet. The
-on-ramp still exists and is still polled the same way — and
-[`GET /treasury/deposit-instructions`](#get-treasurydeposit-instructions) answers
-with the same bank details and the same reference regardless, so you never have
-to start a deposit to find out where to send one.
+| `origin` | The deposit was started by |
+|---|---|
+| `api` | You, with `POST /treasury/onramp` |
+| `deposit` | A wire that arrived quoting your reference. Its ID is `dep-…`, which you never chose: this list is how you find it |
+| `pix` | You, with `POST /treasury/onramp/pix` |
+
+Rows carry no state. Read each deposit's status from
+[`GET /treasury/onramp/:onRampId`](#get-treasuryonramponrampid).
 
 ## GET /treasury/onramp/:onRampId
 
 === "Request"
 
     ```bash
-    curl "$GENIFI_API/treasury/onramp/onramp-2026-08-21-a" \
-      -H "Authorization: Bearer $GENIFI_API_KEY"
+    curl "$JET_API/treasury/onramp/onramp-2026-08-21-a" \
+      -H "Authorization: Bearer $JET_API_KEY"
     ```
 
 === "200 OK"
@@ -191,117 +236,145 @@ to start a deposit to find out where to send one.
       "onRampId": "onramp-2026-08-21-a",
       "running": false,
       "state": "DELIVERED",
-      "net": { "amount": "54120000000", "currency": "USDC", "scale": 6 },
-      "fee": { "amount": "45000", "currency": "EUR", "scale": 2 },
-      "timeline": [ … ]
+      "stage": "DELIVERED",
+      "gross": { "amount": "54165000000", "currency": "USDC" },
+      "fee": { "amount": "27080000", "currency": "USDC" },
+      "net": { "amount": "54092920000", "currency": "USDC" },
+      "txHash": "0x…",
+      "timeline": [
+        { "stage": "AWAITING_PAYMENT", "at": "2026-08-21T09:00:02.000Z" },
+        { "stage": "PAYMENT_RECEIVED", "at": "2026-08-21T13:41:10.000Z" },
+        { "stage": "CONVERTING", "at": "2026-08-21T13:41:12.000Z" },
+        { "stage": "DELIVERING", "at": "2026-08-21T13:44:40.000Z" },
+        { "stage": "DELIVERED", "at": "2026-08-21T13:46:05.000Z" }
+      ]
     }
     ```
 
-### On-ramp states
+`stage` is where a running deposit is now; `state` is how it ended, once it has.
 
-| State | Meaning |
+| `state` | Meaning |
 |---|---|
-| `DELIVERED` | The stablecoin is in your wallet. Done |
-| `REFUNDED` | The on-ramp unwound and your fiat was returned |
+| `DELIVERED` | The USDC is in your wallet. Done |
+| `REFUNDED` | The deposit unwound and the payer's money was returned |
 | `FAILED` | It stopped before delivery |
-| `EXPIRED` | The wire never arrived within the window |
+| `EXPIRED` | The payment never arrived within the window |
 | `IN_DOUBT` | We cannot yet tell whether funds moved. Parked for reconciliation |
 
-`net` is what was delivered; `fee` is what was retained. Both appear once the
-conversion has run.
-
-`EXPIRED` is the common one in practice and it is usually benign: the on-ramp was
-started but the wire was never sent, or was sent too late. Start a new one with a
+`EXPIRED` is the common one in practice and it is usually benign: the deposit was
+opened but the money was never sent, or was sent too late. Open a new one with a
 new key.
 
-## POST /issuers/:issuerId/redeem
+You also get an `onramp.delivered` or `onramp.refunded`
+[webhook](../webhooks/events.md#deposits-and-off-ramps).
 
-Converts a stablecoin holding back into fiat **at par** — 1:1 face value through
-the issuer, rather than swapping on a market and paying slippage.
+## PIX deposits
 
-Requires an approved KYB status.
+A payer in Brazil pays BRL by PIX; USDC is sent to your home wallet. Delivery is
+confirmed **on chain** before anything is credited, not on the provider's word.
 
-=== "Request"
+First price it. The price is live but indicative: it is fixed when the PIX code is
+opened, seconds later.
 
-    ```bash
-    curl -X POST "$GENIFI_API/issuers/iss_a1b2/redeem" \
-      -H "Authorization: Bearer $GENIFI_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "idempotencyKey": "redeem-2026-08-21-a",
-        "amount": { "amount": "25000.00", "currency": "USDC" },
-        "to": "USD"
-      }'
-    ```
-
-=== "202 Accepted"
-
-    ```json
-    { "redeemId": "redeem-2026-08-21-a", "status": "accepted" }
-    ```
-
-| Field | Type | Required | Notes |
-|---|---|:---:|---|
-| `idempotencyKey` | string | yes | **Becomes the redemption ID** |
-| `amount.amount` | decimal string | yes | Over-precision is rejected, never rounded |
-| `amount.currency` | string | yes | e.g. `"USDC"` |
-| `to` | string | no | The fiat to settle into. Defaults to `"USD"` |
-
-!!! info
-
-    Note what this body does **not** contain: no source wallet, no destination
-    account. A redemption converts a held position into custody on both ends, and the
-    accounts are fixed. Letting a caller name either end would turn a treasury
-    operation into a withdrawal.
-
-## GET /issuers/redemptions/:redeemId
-
-=== "Request"
-
-    ```bash
-    curl "$GENIFI_API/issuers/redemptions/redeem-2026-08-21-a" \
-      -H "Authorization: Bearer $GENIFI_API_KEY"
-    ```
-
-=== "200 OK"
-
-    ```json
-    {
-      "redeemId": "redeem-2026-08-21-a",
-      "running": false,
-      "state": "SETTLED",
-      "timeline": [ … ]
-    }
-    ```
-
-### Redemption states
-
-| State | Meaning |
-|---|---|
-| `INITIATED` | Recorded; nothing submitted yet |
-| `SUBMITTED` | The redemption is with the issuer |
-| `SETTLING` | Awaiting settlement into custody |
-| `SETTLED` | Done |
-| `FAILED` | Stopped, cleanly |
-| `IN_DOUBT` | Ambiguous outcome, parked for reconciliation |
-
-The path deliberately omits the issuer. A redemption ID is unique on its own, and
-requiring the issuer to read one back would let you ask the wrong issuer about a
-real redemption and get a `404` that means "wrong path" rather than "no such
-redemption".
-
-## Availability
-
-Both operations depend on adapters that are not wired on every environment. When
-they are not, the endpoint returns `501` with a reason:
+```bash
+curl "$JET_API/treasury/onramp/pix/quote?amount=500.00" \
+  -H "Authorization: Bearer $JET_API_KEY"
+```
 
 ```json
 {
-  "error": "not_implemented",
-  "feature": "onramp",
-  "message": "no on-ramp provider is configured on this environment",
-  "requires": "an on-ramp provider adapter"
+  "sent": { "amount": "50000", "currency": "BRL", "scale": 2 },
+  "targetStablecoin": "USDC",
+  "feeBps": 50,
+  "chain": "polygon",
+  "available": true,
+  "indicative": true,
+  "net": { "amount": "89912000", "currency": "USDC", "scale": 6 },
+  "fee": { "amount": "452000", "currency": "USDC", "scale": 6 },
+  "providerFees": { … },
+  "provider": "avenia",
+  "minimum": { "amount": "1000", "currency": "BRL", "scale": 2 },
+  "maximum": { "amount": "100000", "currency": "BRL", "scale": 2 }
 }
 ```
 
-Check [`/capabilities`](discovery.md#get-capabilities) first.
+`available: false`, with a `reason`, means it cannot be priced right now. Respect
+`minimum` and `maximum`: outside them, opening a code is a `400`.
+
+Then open the PIX code:
+
+```bash
+curl -X POST "$JET_API/treasury/onramp/pix" \
+  -H "Authorization: Bearer $JET_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "idempotencyKey": "pix-2026-08-21-a",
+    "amount": { "amount": "500.00", "currency": "BRL" }
+  }'
+```
+
+```json
+{
+  "onRampId": "pix-2026-08-21-a",
+  "status": "accepted",
+  "instructions": {
+    "reference": "…",
+    "brCode": "00020126…",
+    "pay": { "amount": "50000", "currency": "BRL", "scale": 2 },
+    "receive": { "amount": "89912000", "currency": "USDC", "scale": 6 },
+    "expiresAt": "2026-08-21T09:30:00.000Z"
+  }
+}
+```
+
+Show `brCode` to the payer as a QR code. Retrying with the same key returns the
+**same** code, so a retry never gives the payer a second code to pay. Follow it
+like any deposit, with [`GET /treasury/onramp/:onRampId`](#get-treasuryonramponrampid).
+
+PIX bodies are strict: an unknown field is a `400`.
+
+## USDC deposits
+
+To deposit USDC itself, send it on chain to your deposit address.
+
+```bash
+curl "$JET_API/treasury/crypto-deposit" -H "Authorization: Bearer $JET_API_KEY"
+```
+
+```json
+{
+  "currency": "USDC",
+  "address": "0x…",
+  "networks": [
+    { "network": "polygon", "address": "0x…", "home": true },
+    {
+      "network": "arbitrum",
+      "address": "0x…",
+      "home": false,
+      "fee": { "amount": "120000", "currency": "USDC", "scale": 6 }
+    }
+  ],
+  "quotedAt": { "amount": "100000000", "currency": "USDC", "scale": 6 }
+}
+```
+
+- **Send on your home network** (`home: true`) and the USDC is credited as it is.
+- **Send on any other listed network** and it is credited, then moved to your home
+  network. The `fee` for that move is deducted, and until it arrives it shows as
+  `settling` in [`GET /balance`](wallets-and-accounts.md#get-balance).
+- **`fee` is a live estimate**, priced for a deposit of `quotedAt`. Where it
+  cannot be priced, `feeUnavailable` says why.
+- **`address`** at the top level is present when every network shares one address.
+
+!!! danger
+
+    Send only USDC, only on a listed network. Anything else sent to the address
+    may not be recoverable.
+
+`422 no_home_wallet` means your account has no wallet to receive deposits yet;
+contact us.
+
+## In a sandbox
+
+No real wire or PIX payment is sent in a sandbox. Make one "arrive" with the
+[sandbox tools](../getting-started/environments.md#sandbox-tools).

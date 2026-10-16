@@ -25,7 +25,7 @@ watch the payment run.
 
 Every payment your organization has initiated, with live status. Payments you
 started in this browser appear immediately, merged with the full history from the
-backend — one row per payment, no duplicates.
+backend: one row per payment, no duplicates.
 
 → [Track transactions](../guides/track-transactions.md)
 
@@ -40,7 +40,7 @@ is still settling, what needs attention.
 
 `/dashboard/wallets`
 
-The wallets registered to your organization — the pots payments are funded from.
+The wallets registered to your organization: the pots payments are funded from.
 Balances appear where a provider is wired on your environment.
 
 → [Wallets and funding](../guides/wallets-and-funding.md)
@@ -56,7 +56,7 @@ Listing works; the mint and redeem actions need a provider connection.
 
 `/dashboard/deposits`
 
-Registered custody accounts — where fiat arrives and leaves. Balances and wire
+Registered custody accounts: where fiat arrives and leaves. Balances and wire
 actions depend on a banking connection being wired on your environment.
 
 ## Address book
@@ -88,7 +88,7 @@ Invite colleagues, set and change roles, revoke access.
 
 `/dashboard/settings`
 
-Your own preferences — including which transaction events you want emailed.
+Your own preferences, including which transaction events you want emailed.
 
 → [Email notifications](../guides/notifications.md)
 
@@ -103,7 +103,7 @@ A strip at the top of the app tells you what you are looking at.
 | **Degraded** | The backend is reachable but cannot start new payments right now |
 | **Unreachable** | The dashboard cannot reach the backend at all |
 
-The connection state refreshes on its own — you don't need to reload to see it
+The connection state refreshes on its own: you don't need to reload to see it
 recover.
 
 ## Pages that may be gated

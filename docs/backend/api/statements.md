@@ -1,6 +1,6 @@
 # Statements
 
-A read-only report of what your organization sent in a period, and the fee Genifi
+A read-only report of what your organization sent in a period, and the fee JET
 realized on it.
 
 ## GET /statements
@@ -8,8 +8,8 @@ realized on it.
 === "Request"
 
     ```bash
-    curl "$GENIFI_API/statements?from=2026-08-01T00:00:00Z&to=2026-09-01T00:00:00Z" \
-      -H "Authorization: Bearer $GENIFI_API_KEY"
+    curl "$JET_API/statements?from=2026-08-01T00:00:00Z&to=2026-09-01T00:00:00Z" \
+      -H "Authorization: Bearer $JET_API_KEY"
     ```
 
 === "200 OK"
@@ -68,16 +68,16 @@ belongs to the next period, not this one.
 All figures are arrays keyed by currency, because a corridor mixes send and fee
 currencies and a single number would have to pick one.
 
-## What a statement is — and is not
+## What a statement is, and is not
 
-**It is not an invoice.** Genifi takes its margin in-rate: the price you were
+**It is not an invoice.** JET takes its margin in-rate: the price you were
 quoted already includes it. A statement reports what was earned; it is not a bill
 and it does not represent a balance owed.
 
 **It reports realized fees, not quoted ones.** A line's `fee` is what was
 actually booked, not the hypothetical margin from quote time. Those two numbers
 diverge whenever a payment refunds, fails, or settles at a different amount than
-quoted — and billing off the quote-time figure would mean billing for revenue
+quoted, and billing off the quote-time figure would mean billing for revenue
 that never existed.
 
 **An empty `fee` is normal.** A refunded payment realizes nothing. So does a

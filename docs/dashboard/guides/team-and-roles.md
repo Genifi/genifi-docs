@@ -9,16 +9,16 @@ Viewing and inviting need the `admin` role or higher.
 
 | | Viewer | Member | Admin | Owner |
 |---|:---:|:---:|:---:|:---:|
-| See payments and accounts | ✅ | ✅ | ✅ | ✅ |
-| See the address book | ✅ | ✅ | ✅ | ✅ |
-| Request quotes and send payments | — | ✅ | ✅ | ✅ |
-| Add and edit recipients | — | ✅ | ✅ | ✅ |
-| Manage webhooks | — | — | ✅ | ✅ |
-| View and invite team members | — | — | ✅ | ✅ |
-| Change and revoke roles | — | — | ✅ | ✅ |
-| Rotate the organization API key | — | — | — | ✅ |
+| See payments and accounts | yes | yes | yes | yes |
+| See the address book | yes | yes | yes | yes |
+| Request quotes and send payments | no | yes | yes | yes |
+| Add and edit recipients | no | yes | yes | yes |
+| Manage webhooks | no | no | yes | yes |
+| View and invite team members | no | no | yes | yes |
+| Change and revoke roles | no | no | yes | yes |
+| Rotate the organization API key | no | no | no | yes |
 
-**Owner** is the organization itself. It is never assignable — you cannot grant
+**Owner** is the organization itself. It is never assignable: you cannot grant
 it, and you cannot lose it by removing people. That means there is no way to lock
 your organization out of its own account by revoking the wrong member.
 
@@ -36,7 +36,7 @@ a personal API key.
 
 ### The invite link goes to them, and only them
 
-You will not see the invite token — not even as the person who sent it. It is a
+You will not see the invite token, not even as the person who sent it. It is a
 credential for someone else's account, so it goes to their inbox and nowhere
 else.
 
@@ -47,7 +47,7 @@ gives you a clear refusal rather than quietly downgrading the invitation.
 
 ## Resending an invitation
 
-If an invitation never arrived — a typo, a spam filter, a bounced address — use
+If an invitation never arrived (a typo, a spam filter, a bounced address) use
 **Resend**. It issues a **fresh** token and kills the old one.
 
 This is not just a convenience. Invite tokens are stored hashed and shown once,
@@ -63,7 +63,7 @@ The same rule applies: you cannot set a role you are not allowed to grant.
 
 ## Removing someone
 
-Removing a member who has **accepted** revokes their access — their session and
+Removing a member who has **accepted** revokes their access: their session and
 their personal API key stop working.
 
 Removing a member who has **not yet accepted** rescinds the invitation. The link
@@ -75,7 +75,7 @@ The dashboard tells you which of the two happened.
 
     Removing a member does not affect the **organization's** API key. If the person
     leaving had access to it, [rotate it](api-keys-and-webhooks.md#rotating) as well.
-    That is a separate, deliberate step — it is the credential your integration runs
+    That is a separate, deliberate step: it is the credential your integration runs
     on.
 
 ## Member statuses
