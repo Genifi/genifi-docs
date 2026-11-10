@@ -80,6 +80,48 @@ What this environment can actually do. See
 | `features[].status` | `"live"` \| `"partial"` \| `"simulated"` \| `"planned"` | Per-feature availability |
 | `features[].requires` | string \| absent | For `partial`/`planned`: what it would take to finish it |
 
+`/capabilities` lists what the environment serves. Which of those corridors your
+account may use is [`GET /corridors`](#get-corridors).
+
+## GET /corridors
+
+The corridors enabled for your account. JET enables corridors per account, each at
+the price agreed with you for it, so this list can be shorter than `/capabilities`.
+A corridor that is not listed here is refused at quote and payment with
+`403 corridor_not_enabled`. To add one, ask your account manager.
+
+=== "Request"
+
+    ```bash
+    curl "$JET_API/corridors" -H "Authorization: Bearer $JET_API_KEY"
+    ```
+
+=== "200 OK"
+
+    ```json
+    {
+      "corridors": [
+        {
+          "key": "USDC->VND@VN",
+          "direction": "payout",
+          "from": "USDC",
+          "to": "VND",
+          "destinationCountry": "VN",
+          "enabledAt": "2026-11-06T09:30:00.000Z"
+        }
+      ]
+    }
+    ```
+
+| Field | Type | Notes |
+|---|---|---|
+| `key` | string | The corridor, as `from->to@destinationCountry` |
+| `direction` | `"payout"` \| `"payin"` | A payout pays a recipient in `to`; a pay-in collects `from` and credits you `to` |
+| `enabledAt` | string | When the corridor was enabled for your account |
+
+Any role may read it, including `viewer`. Prices are not listed: every quote shows
+exactly what you pay on that corridor.
+
 ## GET /me
 
 Not unauthenticated, but it belongs here: it answers *which organization is this

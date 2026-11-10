@@ -46,6 +46,29 @@ curl "$JET_API/capabilities"
 
 An unsupported corridor fails cleanly, before any money moves.
 
+## Your corridors
+
+`/capabilities` is what the environment serves. Your account uses the corridors JET
+has enabled for it, each at the price agreed with you for that corridor:
+
+```bash
+curl "$JET_API/corridors" -H "Authorization: Bearer $JET_API_KEY"
+```
+
+A quote, payment or batch on a corridor that is not enabled for you is refused
+before anything is priced or moved:
+
+```json
+{
+  "error": "corridor_not_enabled",
+  "message": "USDC to NGN (NG) is not enabled for your account. Contact your account manager to request it.",
+  "corridor": "USDC->NGN@NG"
+}
+```
+
+A price change on a corridor applies to new quotes and payments. A payment already
+under way keeps the price it started with.
+
 ## How a route is chosen
 
 You do not pick a route. For each payment, JET prices every rail that can serve
@@ -83,5 +106,5 @@ for it.
 
 Corridors are opened by JET, not self-served: each one needs a licensed local
 payout partner and a compliance review of the route. Talk to your account contact
-about a destination you need, and it will appear in `/capabilities` when it is
-live for you.
+about a destination you need. A new destination appears in `/capabilities` when it
+is live, and in `GET /corridors` once it is enabled for your account.

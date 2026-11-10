@@ -65,6 +65,7 @@ Treat a `401` as *this credential is dead*. Do not retry it.
 | `forbidden` | Your role may not do this | Use a credential with a higher role |
 | `forbidden` | `integratorWalletId` is not a wallet you own | Omit it: payments are funded from your home wallet |
 | `kyb_required` | Your organization is not yet verified | Contact your JET account team |
+| `corridor_not_enabled` | The corridor is not enabled for your account | Check `GET /corridors`; ask your account manager to add it |
 | `compliance_hold` | Sanctions screening blocked the payment | Route to your compliance team. **Never** auto-retry |
 
 `compliance_hold` deliberately does not say which list or name matched: that is
