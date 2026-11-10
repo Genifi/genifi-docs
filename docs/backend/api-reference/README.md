@@ -55,6 +55,7 @@ Each team member has a role. An endpoint that names a permission is refused with
 |---|---|
 | [`GET /health`](discovery.md#get-health) | Liveness check |
 | [`GET /capabilities`](discovery.md#get-capabilities) | What this environment can do |
+| [`GET /corridors`](discovery.md#get-corridors) | The corridors your account may use |
 | [`GET /me`](discovery.md#get-me) | Who this API key belongs to |
 
 ### [Quotes and payments](payments.md)

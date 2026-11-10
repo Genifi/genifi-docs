@@ -16,6 +16,7 @@ Some errors can come from any endpoint and are not repeated below: `500 internal
 | `beneficiary_incomplete` | 400 | [`POST /transactions`](payments.md#post-transactions) |
 | `compliance_hold` | 403 | [`POST /transactions`](payments.md#post-transactions) |
 | `conflict` | 409 | [`POST /members/invitations`](team.md#post-membersinvitations), [`POST /wallets/:walletId/topup-eurc`](sandbox.md#post-walletswalletidtopup-eurc) |
+| `corridor_not_enabled` | 403 | [`POST /quotes`](payments.md#post-quotes), [`POST /transactions`](payments.md#post-transactions), [`POST /batches`](batches.md#post-batches), [`GET /treasury/onramp/pix/quote`](deposits.md#get-treasuryonramppixquote), [`POST /treasury/onramp/pix`](deposits.md#post-treasuryonramppix) |
 | `duplicate_item_ref` | 400 | [`POST /batches`](batches.md#post-batches) |
 | `forbidden` | 403 | 23 endpoints |
 | `idempotency_key_conflict` | 409 | [`POST /batches`](batches.md#post-batches), [`POST /treasury/onramp`](deposits.md#post-treasuryonramp), [`POST /treasury/onramp/pix`](deposits.md#post-treasuryonramppix), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals), [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp) |
@@ -42,8 +43,8 @@ Some errors can come from any endpoint and are not repeated below: `500 internal
 | `quote_mismatch` | 422 | [`POST /transactions`](payments.md#post-transactions), [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp) |
 | `quote_not_found` | 422 | [`POST /transactions`](payments.md#post-transactions), [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp) |
 | `quote_unavailable` | 422 | [`POST /quotes`](payments.md#post-quotes), [`GET /treasury/withdrawals/quote`](withdrawals.md#get-treasurywithdrawalsquote), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals) |
-| `rate_limited` | 429 | 57 endpoints |
-| `unauthorized` | 401 | 57 endpoints |
+| `rate_limited` | 429 | 58 endpoints |
+| `unauthorized` | 401 | 58 endpoints |
 | `unknown_currency` | 400 | [`POST /treasury/onramps/simulate-wire`](sandbox.md#post-treasuryonrampssimulate-wire) |
 | `unknown_recipient` | 400 | [`POST /batches`](batches.md#post-batches) |
 | `unsupported_network` | 422 | [`GET /treasury/withdrawals/quote`](withdrawals.md#get-treasurywithdrawalsquote), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals) |

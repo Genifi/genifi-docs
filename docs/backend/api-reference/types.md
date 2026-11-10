@@ -88,7 +88,7 @@ One of: `"name"`, `"account"`, `"country"`, `"bic"`, `"bankCode"`, `"bankName"`,
 
 ## IntegratorAction
 
-One of: `"transaction.read"`, `"account.read"`, `"payment.initiate"`, `"webhook.manage"`, `"member.read"`, `"member.invite"`, `"member.manage"`, `"recipient.read"`, `"recipient.manage"`, `"treasury.move"`, `"beneficiary.manage"`
+One of: `"transaction.read"`, `"account.read"`, `"payment.initiate"`, `"webhook.manage"`, `"member.read"`, `"member.invite"`, `"member.manage"`, `"recipient.read"`, `"recipient.manage"`, `"treasury.move"`, `"beneficiary.manage"`, `"address.manage"`
 
 ## IntegratorRole
 
@@ -114,7 +114,7 @@ One of: `"owner"`, `"admin"`, `"member"`, `"viewer"`
 
 ## NotificationEventType
 
-One of: `"transaction.paid_out"`, `"transaction.reconciled"`, `"transaction.refunded"`, `"transaction.in_doubt"`, `"onramp.delivered"`, `"onramp.refunded"`, `"offramp.paid"`
+One of: `"transaction.paid_out"`, `"transaction.reconciled"`, `"transaction.refunded"`, `"transaction.in_doubt"`, `"onramp.delivered"`, `"onramp.refunded"`, `"offramp.paid"`, `"payin.created"`, `"payin.in_transit"`, `"payin.resolved"`
 
 ## OffRampQuote
 
@@ -215,6 +215,50 @@ One of: `"FAILED"`, `"IN_DOUBT"`, `"REFUNDED"`, `"DELIVERED"`, `"EXPIRED"`, `"OP
 | `realized` | boolean | yes |  |
 | `ownedProvider` | string | yes |  |
 | `orchestratorProvider` | string | yes |  |
+
+## PayInInstructionsView
+
+| Field | Type | Always present | Notes |
+|---|---|:---:|---|
+| `reference` | string | yes |  |
+| `simulated` | boolean | yes |  |
+| `lines` | object[] | yes |  |
+| `lines[].label` | string | yes |  |
+| `lines[].value` | string | yes |  |
+
+## PayInQuoteView
+
+object or object
+
+## PayInStartedView
+
+| Field | Type | Always present | Notes |
+|---|---|:---:|---|
+| `payInId` | string | yes |  |
+| `status` | `"accepted"` | yes |  |
+| `reference` | string | yes |  |
+| `estimateUsdt` | [MoneyJSON](types.md#moneyjson) | yes |  |
+| `inrPerUsd` | string | yes |  |
+| `instructions` | [PayInInstructionsView](types.md#payininstructionsview) | no |  |
+
+## PayInView
+
+| Field | Type | Always present | Notes |
+|---|---|:---:|---|
+| `payInId` | string | yes |  |
+| `status` | `"deposit"`, `"in_transit"`, `"resolved"` | yes |  |
+| `outcome` | `"delivered"`, `"expired"`, `"cancelled"` | no |  |
+| `reference` | string | yes |  |
+| `amountInr` | [MoneyJSON](types.md#moneyjson) | yes |  |
+| `estimateUsdt` | [MoneyJSON](types.md#moneyjson) | yes |  |
+| `walletAddressId` | string | yes |  |
+| `deliveryChain` | string | yes |  |
+| `etaMinutes` | number | no |  |
+| `instructions` | [PayInInstructionsView](types.md#payininstructionsview) | no |  |
+| `inrReceived` | [MoneyJSON](types.md#moneyjson) | no |  |
+| `delivered` | [MoneyJSON](types.md#moneyjson) | no |  |
+| `txHash` | string | no |  |
+| `createdAt` | string | yes |  |
 
 ## PayoutDelta
 
@@ -388,6 +432,18 @@ One of: `"wallet"`, `"bank"`
 | `timeline` | object[] | no |  |
 | `timeline[].state` | string | yes |  |
 | `timeline[].detail` | string | no |  |
+
+## WalletAddressView
+
+| Field | Type | Always present | Notes |
+|---|---|:---:|---|
+| `id` | string | yes |  |
+| `chain` | string | yes |  |
+| `address` | string | yes |  |
+| `label` | string | yes |  |
+| `status` | string | yes |  |
+| `screening` | object or null | yes |  |
+| `createdAt` | string | yes |  |
 
 ## WithdrawalSummary
 

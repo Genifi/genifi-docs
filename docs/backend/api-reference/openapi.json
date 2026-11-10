@@ -183,7 +183,7 @@
           "Discovery"
         ],
         "summary": "What this environment can do",
-        "description": "Open, no key needed. The live corridors and the status of every feature on this environment. Fetch it at startup and gate your integration on it rather than hard-coding a corridor list.",
+        "description": "Open, no key needed. The corridors this environment serves and the status of every feature on it. Which of those corridors YOUR account may use is `GET /corridors`.",
         "security": [],
         "responses": {
           "200": {
@@ -197,6 +197,210 @@
             }
           }
         }
+      }
+    },
+    "/corridors": {
+      "get": {
+        "operationId": "getCorridors",
+        "tags": [
+          "Discovery"
+        ],
+        "summary": "The corridors your account may use",
+        "description": "Corridors are enabled per account, each at the price agreed for it. A corridor not listed here is refused at quote and payment with `403 corridor_not_enabled`; ask your account manager to add one. Any role may read it.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "corridors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "direction": {
+                            "type": "string",
+                            "enum": [
+                              "payout",
+                              "payin"
+                            ]
+                          },
+                          "from": {
+                            "type": "string",
+                            "enum": [
+                              "USDC",
+                              "EURC",
+                              "USD",
+                              "EUR",
+                              "GBP",
+                              "CZK",
+                              "VND",
+                              "NGN",
+                              "PHP",
+                              "INR",
+                              "THB",
+                              "MYR",
+                              "GHS",
+                              "NPR",
+                              "IDR",
+                              "MAD",
+                              "BRL",
+                              "SGD",
+                              "HKD",
+                              "KRW",
+                              "AUD",
+                              "MXN",
+                              "TRY",
+                              "PKR",
+                              "PLN",
+                              "CHF",
+                              "DKK",
+                              "NOK",
+                              "SEK",
+                              "AED",
+                              "USDT",
+                              "POL",
+                              "ETH",
+                              "AVAX"
+                            ]
+                          },
+                          "to": {
+                            "type": "string",
+                            "enum": [
+                              "USDC",
+                              "EURC",
+                              "USD",
+                              "EUR",
+                              "GBP",
+                              "CZK",
+                              "VND",
+                              "NGN",
+                              "PHP",
+                              "INR",
+                              "THB",
+                              "MYR",
+                              "GHS",
+                              "NPR",
+                              "IDR",
+                              "MAD",
+                              "BRL",
+                              "SGD",
+                              "HKD",
+                              "KRW",
+                              "AUD",
+                              "MXN",
+                              "TRY",
+                              "PKR",
+                              "PLN",
+                              "CHF",
+                              "DKK",
+                              "NOK",
+                              "SEK",
+                              "AED",
+                              "USDT",
+                              "POL",
+                              "ETH",
+                              "AVAX"
+                            ]
+                          },
+                          "destinationCountry": {
+                            "type": "object",
+                            "properties": {
+                              "length": {
+                                "type": "number"
+                              },
+                              "__brand": {
+                                "type": "string",
+                                "const": "CountryCode"
+                              }
+                            },
+                            "required": [
+                              "length",
+                              "__brand"
+                            ]
+                          },
+                          "enabledAt": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "key",
+                          "direction",
+                          "from",
+                          "to",
+                          "destinationCountry",
+                          "enabledAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "corridors"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials: unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unauthorized"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: rate_limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "rate_limited"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "retryAfterSeconds": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-rate-limit-class": "read"
       }
     },
     "/me": {
@@ -448,7 +652,7 @@
             }
           },
           "403": {
-            "description": "Not allowed: forbidden",
+            "description": "Not allowed: corridor_not_enabled, forbidden",
             "content": {
               "application/json": {
                 "schema": {
@@ -457,10 +661,14 @@
                     "error": {
                       "type": "string",
                       "enum": [
+                        "corridor_not_enabled",
                         "forbidden"
                       ]
                     },
                     "message": {
+                      "type": "string"
+                    },
+                    "corridor": {
                       "type": "string"
                     }
                   },
@@ -839,7 +1047,7 @@
             }
           },
           "403": {
-            "description": "Not allowed: compliance_hold, forbidden, kyb_required",
+            "description": "Not allowed: compliance_hold, corridor_not_enabled, forbidden, kyb_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -849,6 +1057,7 @@
                       "type": "string",
                       "enum": [
                         "compliance_hold",
+                        "corridor_not_enabled",
                         "forbidden",
                         "kyb_required"
                       ]
@@ -862,6 +1071,9 @@
                         "pending",
                         "rejected"
                       ]
+                    },
+                    "corridor": {
+                      "type": "string"
                     },
                     "transactionId": {
                       "type": "string"
@@ -1541,7 +1753,7 @@
             }
           },
           "403": {
-            "description": "Not allowed: forbidden, kyb_required",
+            "description": "Not allowed: corridor_not_enabled, forbidden, kyb_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -1550,6 +1762,7 @@
                     "error": {
                       "type": "string",
                       "enum": [
+                        "corridor_not_enabled",
                         "forbidden",
                         "kyb_required"
                       ]
@@ -1565,6 +1778,9 @@
                       ]
                     },
                     "integratorWalletId": {
+                      "type": "string"
+                    },
+                    "corridor": {
                       "type": "string"
                     }
                   },
@@ -4721,6 +4937,35 @@
               }
             }
           },
+          "403": {
+            "description": "Not allowed: corridor_not_enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "corridor_not_enabled"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "corridor": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message",
+                    "corridor"
+                  ]
+                }
+              }
+            }
+          },
           "429": {
             "description": "Rate limited: rate_limited",
             "content": {
@@ -4903,7 +5148,7 @@
             }
           },
           "403": {
-            "description": "Not allowed: forbidden, kyb_required",
+            "description": "Not allowed: corridor_not_enabled, forbidden, kyb_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -4912,6 +5157,7 @@
                     "error": {
                       "type": "string",
                       "enum": [
+                        "corridor_not_enabled",
                         "forbidden",
                         "kyb_required"
                       ]
@@ -4928,6 +5174,9 @@
                         "pending",
                         "rejected"
                       ]
+                    },
+                    "corridor": {
+                      "type": "string"
                     }
                   },
                   "required": [
@@ -9035,7 +9284,7 @@
                     "type": "string",
                     "maxLength": 320,
                     "format": "email",
-                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+                    "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
                   },
                   "name": {
                     "type": "string",
@@ -11067,7 +11316,7 @@
                 "type": "object",
                 "properties": {
                   "events": {
-                    "maxItems": 7,
+                    "maxItems": 10,
                     "type": "array",
                     "items": {
                       "type": "string",
@@ -11078,7 +11327,10 @@
                         "transaction.in_doubt",
                         "onramp.delivered",
                         "onramp.refunded",
-                        "offramp.paid"
+                        "offramp.paid",
+                        "payin.created",
+                        "payin.in_transit",
+                        "payin.resolved"
                       ]
                     }
                   }
@@ -11438,7 +11690,7 @@
             "schema": {
               "type": "string",
               "format": "date-time",
-              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           },
           {
@@ -11448,7 +11700,7 @@
             "schema": {
               "type": "string",
               "format": "date-time",
-              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
             }
           }
         ],
@@ -12780,7 +13032,8 @@
           "recipient.read",
           "recipient.manage",
           "treasury.move",
-          "beneficiary.manage"
+          "beneficiary.manage",
+          "address.manage"
         ]
       },
       "IntegratorRole": {
@@ -12850,7 +13103,10 @@
           "transaction.in_doubt",
           "onramp.delivered",
           "onramp.refunded",
-          "offramp.paid"
+          "offramp.paid",
+          "payin.created",
+          "payin.in_transit",
+          "payin.resolved"
         ]
       },
       "OffRampQuote": {
@@ -13186,6 +13442,195 @@
           "realized",
           "ownedProvider",
           "orchestratorProvider"
+        ]
+      },
+      "PayInInstructionsView": {
+        "type": "object",
+        "properties": {
+          "reference": {
+            "type": "string"
+          },
+          "simulated": {
+            "type": "boolean"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "label",
+                "value"
+              ]
+            }
+          }
+        },
+        "required": [
+          "reference",
+          "simulated",
+          "lines"
+        ]
+      },
+      "PayInQuoteView": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "available": {
+                "type": "boolean",
+                "const": true
+              },
+              "indicative": {
+                "type": "boolean",
+                "const": true
+              },
+              "inr": {
+                "$ref": "#/components/schemas/MoneyJSON"
+              },
+              "inrPerUsd": {
+                "type": "string"
+              },
+              "usd": {
+                "$ref": "#/components/schemas/MoneyJSON"
+              },
+              "usdt": {
+                "$ref": "#/components/schemas/MoneyJSON"
+              },
+              "marginBps": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "available",
+              "indicative",
+              "inr",
+              "inrPerUsd",
+              "usd",
+              "usdt",
+              "marginBps"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "available": {
+                "type": "boolean",
+                "const": false
+              },
+              "reason": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "available",
+              "reason"
+            ]
+          }
+        ]
+      },
+      "PayInStartedView": {
+        "type": "object",
+        "properties": {
+          "payInId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "const": "accepted"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "estimateUsdt": {
+            "$ref": "#/components/schemas/MoneyJSON"
+          },
+          "inrPerUsd": {
+            "type": "string"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/PayInInstructionsView"
+          }
+        },
+        "required": [
+          "payInId",
+          "status",
+          "reference",
+          "estimateUsdt",
+          "inrPerUsd"
+        ]
+      },
+      "PayInView": {
+        "type": "object",
+        "properties": {
+          "payInId": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "deposit",
+              "in_transit",
+              "resolved"
+            ]
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "delivered",
+              "expired",
+              "cancelled"
+            ]
+          },
+          "reference": {
+            "type": "string"
+          },
+          "amountInr": {
+            "$ref": "#/components/schemas/MoneyJSON"
+          },
+          "estimateUsdt": {
+            "$ref": "#/components/schemas/MoneyJSON"
+          },
+          "walletAddressId": {
+            "type": "string"
+          },
+          "deliveryChain": {
+            "type": "string"
+          },
+          "etaMinutes": {
+            "type": "number"
+          },
+          "instructions": {
+            "$ref": "#/components/schemas/PayInInstructionsView"
+          },
+          "inrReceived": {
+            "$ref": "#/components/schemas/MoneyJSON"
+          },
+          "delivered": {
+            "$ref": "#/components/schemas/MoneyJSON"
+          },
+          "txHash": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "payInId",
+          "status",
+          "reference",
+          "amountInr",
+          "estimateUsdt",
+          "walletAddressId",
+          "deliveryChain",
+          "createdAt"
         ]
       },
       "PayoutDelta": {
@@ -13725,6 +14170,67 @@
         "required": [
           "transactionId",
           "running"
+        ]
+      },
+      "WalletAddressView": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "screening": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "provider": {
+                "type": "string"
+              },
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "allowed",
+                  "refused"
+                ]
+              },
+              "reason": {
+                "type": "string"
+              },
+              "screenedAt": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "provider",
+              "verdict",
+              "screenedAt"
+            ]
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "chain",
+          "address",
+          "label",
+          "status",
+          "screening",
+          "createdAt"
         ]
       },
       "WithdrawalSummary": {

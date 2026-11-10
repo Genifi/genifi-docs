@@ -61,7 +61,7 @@ Send the full set you want; an empty list turns every email off.
 
 | Field | Type | Required | Rules | Notes |
 |---|---|:---:|---|---|
-| `events` | `"transaction.paid_out"`, `"transaction.reconciled"`, `"transaction.refunded"`, `"transaction.in_doubt"`, `"onramp.delivered"`, `"onramp.refunded"`, `"offramp.paid"`[] | yes | at most 7 items |  |
+| `events` | `"transaction.paid_out"`, `"transaction.reconciled"`, `"transaction.refunded"`, `"transaction.in_doubt"`, `"onramp.delivered"`, `"onramp.refunded"`, `"offramp.paid"`, `"payin.created"`, `"payin.in_transit"`, `"payin.resolved"`[] | yes | at most 10 items |  |
 
 **Responses**
 

@@ -12,6 +12,7 @@ What this environment can do, whether it is up, and who your key belongs to.
 |---|---|
 | [`GET /health`](#get-health) | Liveness check |
 | [`GET /capabilities`](#get-capabilities) | What this environment can do |
+| [`GET /corridors`](#get-corridors) | The corridors your account may use |
 | [`GET /me`](#get-me) | Who this API key belongs to |
 
 ## GET /health
@@ -47,7 +48,7 @@ What this environment can do.
 
 **Auth:** none
 
-Open, no key needed. The live corridors and the status of every feature on this environment. Fetch it at startup and gate your integration on it rather than hard-coding a corridor list.
+Open, no key needed. The corridors this environment serves and the status of every feature on it. Which of those corridors YOUR account may use is `GET /corridors`.
 
 [Read the guide](../api/discovery.md#get-capabilities)
 
@@ -65,6 +66,38 @@ Open, no key needed. The live corridors and the status of every feature on this 
 | `environment` | `"simulated"`, `"sandbox"`, `"production"` | yes |  |
 | `corridors` | [CorridorCapability](types.md#corridorcapability)[] | yes |  |
 | `features` | [FeatureCapability](types.md#featurecapability)[] | yes |  |
+
+## GET /corridors
+
+The corridors your account may use.
+
+**Auth:** API key · **Rate limit:** `read`
+
+Corridors are enabled per account, each at the price agreed for it. A corridor not listed here is refused at quote and payment with `403 corridor_not_enabled`; ask your account manager to add one. Any role may read it.
+
+[Read the guide](../api/discovery.md#get-corridors)
+
+**Responses**
+
+| Status | Meaning | `error` codes |
+|---|---|---|
+| `200` | OK |  |
+| `401` | Missing or invalid credentials | `unauthorized` |
+| `429` | Rate limited | `rate_limited` |
+
+**`200` body**
+
+| Field | Type | Always present | Notes |
+|---|---|:---:|---|
+| `corridors` | object[] | yes |  |
+| `corridors[].key` | string | yes |  |
+| `corridors[].direction` | `"payout"`, `"payin"` | yes |  |
+| `corridors[].from` | `"USDC"`, `"EURC"`, `"USD"`, `"EUR"`, `"GBP"`, `"CZK"`, `"VND"`, `"NGN"`, `"PHP"`, `"INR"`, `"THB"`, `"MYR"`, `"GHS"`, `"NPR"`, `"IDR"`, `"MAD"`, `"BRL"`, `"SGD"`, `"HKD"`, `"KRW"`, `"AUD"`, `"MXN"`, `"TRY"`, `"PKR"`, `"PLN"`, `"CHF"`, `"DKK"`, `"NOK"`, `"SEK"`, `"AED"`, `"USDT"`, `"POL"`, `"ETH"`, `"AVAX"` | yes |  |
+| `corridors[].to` | `"USDC"`, `"EURC"`, `"USD"`, `"EUR"`, `"GBP"`, `"CZK"`, `"VND"`, `"NGN"`, `"PHP"`, `"INR"`, `"THB"`, `"MYR"`, `"GHS"`, `"NPR"`, `"IDR"`, `"MAD"`, `"BRL"`, `"SGD"`, `"HKD"`, `"KRW"`, `"AUD"`, `"MXN"`, `"TRY"`, `"PKR"`, `"PLN"`, `"CHF"`, `"DKK"`, `"NOK"`, `"SEK"`, `"AED"`, `"USDT"`, `"POL"`, `"ETH"`, `"AVAX"` | yes |  |
+| `corridors[].destinationCountry` | object | yes |  |
+| `corridors[].destinationCountry.length` | number | yes |  |
+| `corridors[].destinationCountry.__brand` | `"CountryCode"` | yes |  |
+| `corridors[].enabledAt` | string | yes |  |
 
 ## GET /me
 

@@ -249,6 +249,7 @@ A live, indicative price for paying BRL by PIX: what lands in your wallet, the f
 | `200` | OK |  |
 | `400` | Invalid request | `validation` |
 | `401` | Missing or invalid credentials | `unauthorized` |
+| `403` | Not allowed | `corridor_not_enabled` |
 | `429` | Rate limited | `rate_limited` |
 | `501` | Not available on this environment | `not_implemented` |
 
@@ -298,7 +299,7 @@ Answers `202` with a PIX code to show as a QR. When it is paid, USDC is sent to 
 | `202` | Accepted: started, not finished |  |
 | `400` | Invalid request | `validation` |
 | `401` | Missing or invalid credentials | `unauthorized` |
-| `403` | Not allowed | `forbidden`, `kyb_required` |
+| `403` | Not allowed | `corridor_not_enabled`, `forbidden`, `kyb_required` |
 | `409` | Conflict | `idempotency_key_conflict`, `idempotency_key_reused` |
 | `422` | Understood, but cannot be done as asked | `pix_onramp_unavailable` |
 | `429` | Rate limited | `rate_limited` |

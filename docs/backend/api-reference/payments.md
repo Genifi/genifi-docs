@@ -45,7 +45,7 @@ Prices a payment without starting one. Returns a single-use `quoteId` that locks
 | `200` | OK |  |
 | `400` | Invalid request | `validation` |
 | `401` | Missing or invalid credentials | `unauthorized` |
-| `403` | Not allowed | `forbidden` |
+| `403` | Not allowed | `corridor_not_enabled`, `forbidden` |
 | `422` | Understood, but cannot be done as asked | `no_route_for_chain`, `not_home_wallet`, `quote_unavailable` |
 | `429` | Rate limited | `rate_limited` |
 
@@ -122,7 +122,7 @@ Starts a durable payment and answers `202` straight away. Your `idempotencyKey` 
 | `202` | Accepted: started, not finished |  |
 | `400` | Invalid request | `beneficiary_incomplete`, `validation` |
 | `401` | Missing or invalid credentials | `unauthorized` |
-| `403` | Not allowed | `compliance_hold`, `forbidden`, `kyb_required` |
+| `403` | Not allowed | `compliance_hold`, `corridor_not_enabled`, `forbidden`, `kyb_required` |
 | `422` | Understood, but cannot be done as asked | `ambiguous_home_wallet`, `insufficient_funds`, `no_home_wallet`, `not_home_wallet`, `quote_expired`, `quote_mismatch`, `quote_not_found`, `wallet_chain_unknown` |
 | `429` | Rate limited | `rate_limited` |
 

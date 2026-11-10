@@ -72,7 +72,7 @@ Up to 1,000 payments to one corridor on one rail, funded from your home wallet i
 | `202` | Accepted: started, not finished |  |
 | `400` | Invalid request | `duplicate_item_ref`, `invalid_send_amount`, `unknown_recipient`, `validation` |
 | `401` | Missing or invalid credentials | `unauthorized` |
-| `403` | Not allowed | `forbidden`, `kyb_required` |
+| `403` | Not allowed | `corridor_not_enabled`, `forbidden`, `kyb_required` |
 | `409` | Conflict | `idempotency_key_conflict` |
 | `422` | Understood, but cannot be done as asked | `ambiguous_home_wallet`, `no_home_wallet`, `not_home_wallet`, `wallet_chain_unknown` |
 | `429` | Rate limited | `rate_limited` |
