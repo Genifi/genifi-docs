@@ -4,6 +4,14 @@ description: How to tell what your environment can actually do, before you build
 
 # Environments
 
+| Environment | Base URL (`$JET_API`) | Dashboard |
+|---|---|---|
+| Sandbox | `https://api.sandbox.jet.money` | `https://sandbox.jet.money` |
+| Production | `https://api.jet.money`, when your production access is issued | `https://dashboard.jet.money` |
+
+Each environment has its own API keys. A sandbox key does not work in
+production, and production keys are issued separately.
+
 JET environments differ in one important way: how much of the rail is backed
 by a real provider. Rather than making you guess, the API publishes it.
 

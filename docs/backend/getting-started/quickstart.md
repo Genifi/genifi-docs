@@ -18,7 +18,7 @@ You need three things, all issued during onboarding:
 | **A funded balance** | USDC in your JET balance. You get a wallet at onboarding; fund it with a [deposit](../api/treasury.md). |
 
 ```bash
-export JET_API="https://…"          # issued at onboarding
+export JET_API="https://api.sandbox.jet.money"   # sandbox; see Environments
 export JET_API_KEY="gk_…"           # issued at onboarding
 ```
 
