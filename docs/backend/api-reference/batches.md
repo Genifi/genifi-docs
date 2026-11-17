@@ -18,7 +18,7 @@ One instruction, many recipients, one rail.
 
 Submit a batch payout.
 
-**Auth:** API key · **Permission:** `payment.initiate` (owner, admin, member) · **KYB:** approved organizations only · **Rate limit:** `initiate`
+**Auth:** API key · **Permission:** `payment.initiate` (owner, admin, member) · **KYB:** approved organizations only · **Dashboard 2FA:** asked in the dashboard, never of an API key · **Rate limit:** `initiate`
 
 Up to 1,000 payments to one corridor on one rail, funded from your home wallet in a single transfer. A batch is accepted or refused **as a whole**; once accepted, each item is paid independently and can fail on its own. Counts against the `initiate` rate limit **once per item**.
 
@@ -72,7 +72,7 @@ Up to 1,000 payments to one corridor on one rail, funded from your home wallet i
 | `202` | Accepted: started, not finished |  |
 | `400` | Invalid request | `duplicate_item_ref`, `invalid_send_amount`, `unknown_recipient`, `validation` |
 | `401` | Missing or invalid credentials | `unauthorized` |
-| `403` | Not allowed | `corridor_not_enabled`, `forbidden`, `kyb_required` |
+| `403` | Not allowed | `corridor_not_enabled`, `forbidden`, `kyb_required`, `mfa_enrollment_required`, `step_up_required` |
 | `409` | Conflict | `idempotency_key_conflict` |
 | `422` | Understood, but cannot be done as asked | `ambiguous_home_wallet`, `no_home_wallet`, `not_home_wallet`, `wallet_chain_unknown` |
 | `429` | Rate limited | `rate_limited` |

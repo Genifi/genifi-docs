@@ -11,11 +11,14 @@ Getting money out: USDC to your own wallet, or fiat to a bank account.
 | Endpoint | |
 |---|---|
 | [`GET /treasury/withdrawals/quote`](#get-treasurywithdrawalsquote) | Price a USDC withdrawal to your own wallet |
-| [`POST /treasury/withdrawals`](#post-treasurywithdrawals) | Withdraw USDC to your own wallet |
+| [`POST /treasury/withdrawals`](#post-treasurywithdrawals) | Withdraw USDC to a whitelisted wallet |
 | [`GET /treasury/withdrawals`](#get-treasurywithdrawals) | List your withdrawals |
 | [`GET /treasury/withdrawals/:withdrawalId`](#get-treasurywithdrawalswithdrawalid) | A withdrawal's status and timeline |
 | [`POST /treasury/beneficiaries`](#post-treasurybeneficiaries) | Register a bank account an off-ramp can pay |
 | [`GET /treasury/beneficiaries`](#get-treasurybeneficiaries) | Your registered beneficiaries |
+| [`GET /treasury/wallet-addresses`](#get-treasurywallet-addresses) | List your whitelisted wallets |
+| [`POST /treasury/wallet-addresses`](#post-treasurywallet-addresses) | Whitelist a wallet |
+| [`DELETE /treasury/wallet-addresses/:id`](#delete-treasurywallet-addressesid) | Remove a whitelisted wallet |
 | [`GET /treasury/offramp/quote`](#get-treasuryofframpquote) | Price an off-ramp to a beneficiary |
 | [`POST /treasury/offramp`](#post-treasuryofframp) | Pay USDC out to a beneficiary's bank account |
 | [`GET /treasury/offramps`](#get-treasuryofframps) | List your off-ramps |
@@ -60,15 +63,15 @@ What sending this much USDC to this network costs, and what arrives.
 
 ## POST /treasury/withdrawals
 
-Withdraw USDC to your own wallet.
+Withdraw USDC to a whitelisted wallet.
 
-**Auth:** API key · **Permission:** `treasury.move` (owner, admin, member) · **KYB:** approved organizations only · **Rate limit:** `write`
+**Auth:** API key · **Permission:** `treasury.move` (owner, admin, member) · **KYB:** approved organizations only · **Dashboard 2FA:** asked in the dashboard, never of an API key · **Rate limit:** `write`
 
-Re-priced when you send it; the response carries the fee that applied. **An on-chain send cannot be reversed**: check the address and network. Your `idempotencyKey` becomes the withdrawal ID, and reusing it with a different amount, network or address is a `409`.
+Sends to a wallet on your whitelist, named by its ID: add it first with `POST /treasury/wallet-addresses` and wait for it to be approved. The address and network come from that entry, so the request carries neither. Re-priced when you send it; the response carries the fee that applied. **An on-chain send cannot be reversed**: check the entry before you use it. Your `idempotencyKey` becomes the withdrawal ID, and reusing it with a different amount or wallet is a `409`.
 
 [Read the guide](../api/withdrawals.md#post-treasurywithdrawals)
 
-**Request body** · `application/json` · unknown fields are **ignored**
+**Request body** · `application/json` · unknown fields are **rejected** with `400`
 
 | Field | Type | Required | Rules | Notes |
 |---|---|:---:|---|---|
@@ -76,8 +79,7 @@ Re-priced when you send it; the response carries the fee that applied. **An on-c
 | `amount` | object | yes |  |  |
 | `amount.amount` | string | yes | matches `^\d+(\.\d+)?$` | Decimal string. |
 | `amount.currency` | string | yes | 3–5 chars | `USDC`. |
-| `chain` | string | yes | 1–40 chars | The network to send on. Must be the network your address is on. |
-| `toAddress` | string | yes | matches `^0x[0-9a-fA-F]{40}$` | A `0x`-prefixed EVM address. |
+| `walletAddressId` | string (uuid) | yes |  | The ID of a whitelisted wallet whose status is `approved`. |
 
 **Responses**
 
@@ -86,9 +88,9 @@ Re-priced when you send it; the response carries the fee that applied. **An on-c
 | `202` | Accepted: started, not finished |  |
 | `400` | Invalid request | `validation` |
 | `401` | Missing or invalid credentials | `unauthorized` |
-| `403` | Not allowed | `forbidden`, `kyb_required` |
+| `403` | Not allowed | `forbidden`, `kyb_required`, `mfa_enrollment_required`, `step_up_required` |
 | `409` | Conflict | `idempotency_key_conflict`, `idempotency_key_reused` |
-| `422` | Understood, but cannot be done as asked | `ambiguous_home_wallet`, `no_home_wallet`, `quote_unavailable`, `unsupported_network` |
+| `422` | Understood, but cannot be done as asked | `ambiguous_home_wallet`, `no_home_wallet`, `quote_unavailable`, `unsupported_network`, `wallet_not_approved`, `wallet_not_whitelisted` |
 | `429` | Rate limited | `rate_limited` |
 | `501` | Not available on this environment | `not_implemented` |
 
@@ -99,6 +101,7 @@ Re-priced when you send it; the response carries the fee that applied. **An on-c
 | `withdrawalId` | string | yes |  |
 | `amount` | [MoneyJSON](types.md#moneyjson) | yes |  |
 | `network` | string | yes |  |
+| `walletAddressId` | string | yes |  |
 | `fee` | [MoneyJSON](types.md#moneyjson) | yes |  |
 | `net` | [MoneyJSON](types.md#moneyjson) | yes |  |
 
@@ -179,7 +182,7 @@ A withdrawal's status and timeline.
 
 Register a bank account an off-ramp can pay.
 
-**Auth:** API key · **Permission:** `beneficiary.manage` (owner, admin, member) · **KYB:** approved organizations only · **Rate limit:** `write`
+**Auth:** API key · **Permission:** `beneficiary.manage` (owner, admin, member) · **KYB:** approved organizations only · **Dashboard 2FA:** asked in the dashboard, never of an API key · **Rate limit:** `write`
 
 An off-ramp pays a registered beneficiary by ID, never bank details sent inline. Every field is required. Registering is your assertion; nothing here verifies the account.
 
@@ -205,7 +208,7 @@ An off-ramp pays a registered beneficiary by ID, never bank details sent inline.
 | `201` | Created |  |
 | `400` | Invalid request | `validation` |
 | `401` | Missing or invalid credentials | `unauthorized` |
-| `403` | Not allowed | `forbidden`, `kyb_required` |
+| `403` | Not allowed | `forbidden`, `kyb_required`, `mfa_enrollment_required`, `step_up_required` |
 | `429` | Rate limited | `rate_limited` |
 | `501` | Not available on this environment | `not_implemented` |
 
@@ -247,6 +250,99 @@ Your registered beneficiaries.
 |---|---|:---:|---|
 | `beneficiaries` | [BeneficiaryView](types.md#beneficiaryview)[] | yes |  |
 | `count` | number | yes |  |
+
+## GET /treasury/wallet-addresses
+
+List your whitelisted wallets.
+
+**Auth:** API key · **Permission:** `account.read` (owner, admin, member, viewer) · **Rate limit:** `read`
+
+Your whitelisted wallets, newest first. Each carries a `status`: `pending_review` until JET reviews it, then `approved` or `rejected` (with the reason in `reviewNote`). Only `approved` wallets can receive a withdrawal.
+
+**Responses**
+
+| Status | Meaning | `error` codes |
+|---|---|---|
+| `200` | OK |  |
+| `401` | Missing or invalid credentials | `unauthorized` |
+| `403` | Not allowed | `forbidden` |
+| `429` | Rate limited | `rate_limited` |
+| `501` | Not available on this environment | `not_implemented` |
+
+**`200` body**
+
+| Field | Type | Always present | Notes |
+|---|---|:---:|---|
+| `addresses` | [WalletAddressView](types.md#walletaddressview)[] | yes |  |
+| `count` | number | yes |  |
+
+## POST /treasury/wallet-addresses
+
+Whitelist a wallet.
+
+**Auth:** API key · **Permission:** `address.manage` (owner, admin, member) · **KYB:** approved organizations only · **Dashboard 2FA:** asked in the dashboard, never of an API key · **Rate limit:** `write`
+
+Adds a wallet that withdrawals may send to. It comes back `pending_review`: JET reviews every new wallet before money can be sent to it, so add it ahead of the withdrawal. In the sandbox it is approved straight away. A wallet that fails address screening comes back `rejected`. The same address may be listed once per network.
+
+**Request body** · `application/json` · unknown fields are **rejected** with `400`
+
+| Field | Type | Required | Rules | Notes |
+|---|---|:---:|---|---|
+| `chain` | string | yes | 1–40 chars | The network the wallet is on, as `GET /treasury/crypto-deposit` names it. |
+| `address` | string | yes | matches `^0x[0-9a-fA-F]{40}$` | A `0x`-prefixed EVM address. Stored lower-cased. |
+| `label` | string | yes | 1–100 chars | Your name for it, 1 to 100 characters. |
+
+**Responses**
+
+| Status | Meaning | `error` codes |
+|---|---|---|
+| `201` | Created |  |
+| `400` | Invalid request | `validation` |
+| `401` | Missing or invalid credentials | `unauthorized` |
+| `403` | Not allowed | `forbidden`, `kyb_required`, `mfa_enrollment_required`, `step_up_required` |
+| `409` | Conflict | `duplicate_address` |
+| `422` | Understood, but cannot be done as asked | `unsupported_network` |
+| `429` | Rate limited | `rate_limited` |
+| `501` | Not available on this environment | `not_implemented` |
+
+**`201` body** · [WalletAddressView](types.md#walletaddressview)
+
+| Field | Type | Always present | Notes |
+|---|---|:---:|---|
+| `id` | string | yes |  |
+| `chain` | string | yes |  |
+| `address` | string | yes |  |
+| `label` | string | yes |  |
+| `status` | string | yes |  |
+| `screening` | object or null | yes |  |
+| `reviewedAt` | string or null | yes |  |
+| `reviewNote` | string or null | yes |  |
+| `createdAt` | string | yes |  |
+
+## DELETE /treasury/wallet-addresses/:id
+
+Remove a whitelisted wallet.
+
+**Auth:** API key · **Permission:** `address.manage` (owner, admin, member) · **Rate limit:** `write`
+
+New withdrawals can no longer use it. One already sent is unaffected. You can add the address again later.
+
+**Path parameters**
+
+| Name | Type |
+|---|---|
+| `id` | string |
+
+**Responses**
+
+| Status | Meaning | `error` codes |
+|---|---|---|
+| `204` |  |  |
+| `401` | Missing or invalid credentials | `unauthorized` |
+| `403` | Not allowed | `forbidden` |
+| `404` | Not found, or not yours | `not_found` |
+| `429` | Rate limited | `rate_limited` |
+| `501` | Not available on this environment | `not_implemented` |
 
 ## GET /treasury/offramp/quote
 
@@ -310,7 +406,7 @@ What the beneficiary receives, in their currency, for this much USDC. Where the 
 
 Pay USDC out to a beneficiary's bank account.
 
-**Auth:** API key · **Permission:** `treasury.move` (owner, admin, member) · **KYB:** approved organizations only · **Rate limit:** `write`
+**Auth:** API key · **Permission:** `treasury.move` (owner, admin, member) · **KYB:** approved organizations only · **Dashboard 2FA:** asked in the dashboard, never of an API key · **Rate limit:** `write`
 
 Takes USDC from your home wallet and pays a beneficiary you registered. Answers `202`; your `idempotencyKey` becomes the off-ramp ID.
 
@@ -335,7 +431,7 @@ Takes USDC from your home wallet and pays a beneficiary you registered. Answers 
 | `202` | Accepted: started, not finished |  |
 | `400` | Invalid request | `validation` |
 | `401` | Missing or invalid credentials | `unauthorized` |
-| `403` | Not allowed | `forbidden`, `kyb_required` |
+| `403` | Not allowed | `forbidden`, `kyb_required`, `mfa_enrollment_required`, `step_up_required` |
 | `409` | Conflict | `idempotency_key_conflict` |
 | `422` | Understood, but cannot be done as asked | `not_home_chain`, `quote_already_used`, `quote_mismatch`, `quote_not_found` |
 | `429` | Rate limited | `rate_limited` |

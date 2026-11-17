@@ -1047,7 +1047,7 @@
             }
           },
           "403": {
-            "description": "Not allowed: compliance_hold, corridor_not_enabled, forbidden, kyb_required",
+            "description": "Not allowed: compliance_hold, corridor_not_enabled, forbidden, kyb_required, mfa_enrollment_required, step_up_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -1059,7 +1059,9 @@
                         "compliance_hold",
                         "corridor_not_enabled",
                         "forbidden",
-                        "kyb_required"
+                        "kyb_required",
+                        "mfa_enrollment_required",
+                        "step_up_required"
                       ]
                     },
                     "message": {
@@ -1158,6 +1160,7 @@
           "member"
         ],
         "x-kyb-required": true,
+        "x-dashboard-2fa": true,
         "x-rate-limit-class": "initiate"
       },
       "get": {
@@ -1753,7 +1756,7 @@
             }
           },
           "403": {
-            "description": "Not allowed: corridor_not_enabled, forbidden, kyb_required",
+            "description": "Not allowed: corridor_not_enabled, forbidden, kyb_required, mfa_enrollment_required, step_up_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -1764,7 +1767,9 @@
                       "enum": [
                         "corridor_not_enabled",
                         "forbidden",
-                        "kyb_required"
+                        "kyb_required",
+                        "mfa_enrollment_required",
+                        "step_up_required"
                       ]
                     },
                     "message": {
@@ -1911,6 +1916,7 @@
           "member"
         ],
         "x-kyb-required": true,
+        "x-dashboard-2fa": true,
         "x-rate-limit-class": "initiate"
       },
       "get": {
@@ -5645,8 +5651,8 @@
         "tags": [
           "Withdrawals and off-ramps"
         ],
-        "summary": "Withdraw USDC to your own wallet",
-        "description": "Re-priced when you send it; the response carries the fee that applied. **An on-chain send cannot be reversed**: check the address and network. Your `idempotencyKey` becomes the withdrawal ID, and reusing it with a different amount, network or address is a `409`.",
+        "summary": "Withdraw USDC to a whitelisted wallet",
+        "description": "Sends to a wallet on your whitelist, named by its ID: add it first with `POST /treasury/wallet-addresses` and wait for it to be approved. The address and network come from that entry, so the request carries neither. Re-priced when you send it; the response carries the fee that applied. **An on-chain send cannot be reversed**: check the entry before you use it. Your `idempotencyKey` becomes the withdrawal ID, and reusing it with a different amount or wallet is a `409`.",
         "security": [
           {
             "bearerAuth": []
@@ -5681,22 +5687,18 @@
                       "currency"
                     ]
                   },
-                  "chain": {
+                  "walletAddressId": {
                     "type": "string",
-                    "minLength": 1,
-                    "maxLength": 40
-                  },
-                  "toAddress": {
-                    "type": "string",
-                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                    "format": "uuid",
+                    "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
                   }
                 },
                 "required": [
                   "idempotencyKey",
                   "amount",
-                  "chain",
-                  "toAddress"
-                ]
+                  "walletAddressId"
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -5718,6 +5720,9 @@
                     "network": {
                       "type": "string"
                     },
+                    "walletAddressId": {
+                      "type": "string"
+                    },
                     "fee": {
                       "$ref": "#/components/schemas/MoneyJSON"
                     },
@@ -5729,6 +5734,7 @@
                     "withdrawalId",
                     "amount",
                     "network",
+                    "walletAddressId",
                     "fee",
                     "net"
                   ]
@@ -5789,7 +5795,7 @@
             }
           },
           "403": {
-            "description": "Not allowed: forbidden, kyb_required",
+            "description": "Not allowed: forbidden, kyb_required, mfa_enrollment_required, step_up_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -5799,7 +5805,9 @@
                       "type": "string",
                       "enum": [
                         "forbidden",
-                        "kyb_required"
+                        "kyb_required",
+                        "mfa_enrollment_required",
+                        "step_up_required"
                       ]
                     },
                     "message": {
@@ -5852,7 +5860,7 @@
             }
           },
           "422": {
-            "description": "Understood, but cannot be done as asked: ambiguous_home_wallet, no_home_wallet, quote_unavailable, unsupported_network",
+            "description": "Understood, but cannot be done as asked: ambiguous_home_wallet, no_home_wallet, quote_unavailable, unsupported_network, wallet_not_approved, wallet_not_whitelisted",
             "content": {
               "application/json": {
                 "schema": {
@@ -5864,10 +5872,15 @@
                         "ambiguous_home_wallet",
                         "no_home_wallet",
                         "quote_unavailable",
-                        "unsupported_network"
+                        "unsupported_network",
+                        "wallet_not_approved",
+                        "wallet_not_whitelisted"
                       ]
                     },
                     "message": {
+                      "type": "string"
+                    },
+                    "status": {
                       "type": "string"
                     }
                   },
@@ -5935,6 +5948,7 @@
           "member"
         ],
         "x-kyb-required": true,
+        "x-dashboard-2fa": true,
         "x-rate-limit-class": "write"
       },
       "get": {
@@ -6425,7 +6439,7 @@
             }
           },
           "403": {
-            "description": "Not allowed: forbidden, kyb_required",
+            "description": "Not allowed: forbidden, kyb_required, mfa_enrollment_required, step_up_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -6435,7 +6449,9 @@
                       "type": "string",
                       "enum": [
                         "forbidden",
-                        "kyb_required"
+                        "kyb_required",
+                        "mfa_enrollment_required",
+                        "step_up_required"
                       ]
                     },
                     "action": {
@@ -6516,6 +6532,7 @@
           "member"
         ],
         "x-kyb-required": true,
+        "x-dashboard-2fa": true,
         "x-rate-limit-class": "write"
       },
       "get": {
@@ -6626,6 +6643,568 @@
           }
         },
         "x-rate-limit-class": "read"
+      }
+    },
+    "/treasury/wallet-addresses": {
+      "get": {
+        "operationId": "getTreasuryWalletAddresses",
+        "tags": [
+          "Withdrawals and off-ramps"
+        ],
+        "summary": "List your whitelisted wallets",
+        "description": "Your whitelisted wallets, newest first. Each carries a `status`: `pending_review` until JET reviews it, then `approved` or `rejected` (with the reason in `reviewNote`). Only `approved` wallets can receive a withdrawal.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "addresses": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WalletAddressView"
+                      }
+                    },
+                    "count": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "addresses",
+                    "count"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials: unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unauthorized"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed: forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbidden"
+                      ]
+                    },
+                    "action": {
+                      "$ref": "#/components/schemas/IntegratorAction"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "action",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: rate_limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "rate_limited"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "retryAfterSeconds": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not available on this environment: not_implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "not_implemented"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "account.read",
+        "x-roles": [
+          "owner",
+          "admin",
+          "member",
+          "viewer"
+        ],
+        "x-rate-limit-class": "read"
+      },
+      "post": {
+        "operationId": "postTreasuryWalletAddresses",
+        "tags": [
+          "Withdrawals and off-ramps"
+        ],
+        "summary": "Whitelist a wallet",
+        "description": "Adds a wallet that withdrawals may send to. It comes back `pending_review`: JET reviews every new wallet before money can be sent to it, so add it ahead of the withdrawal. In the sandbox it is approved straight away. A wallet that fails address screening comes back `rejected`. The same address may be listed once per network.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "chain": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 40
+                  },
+                  "address": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-fA-F]{40}$"
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "required": [
+                  "chain",
+                  "address",
+                  "label"
+                ],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletAddressView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request: validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "validation"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "issues": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid credentials: unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unauthorized"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed: forbidden, kyb_required, mfa_enrollment_required, step_up_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbidden",
+                        "kyb_required",
+                        "mfa_enrollment_required",
+                        "step_up_required"
+                      ]
+                    },
+                    "action": {
+                      "$ref": "#/components/schemas/IntegratorAction"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "kybStatus": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "rejected"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict: duplicate_address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "duplicate_address"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Understood, but cannot be done as asked: unsupported_network",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unsupported_network"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: rate_limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "rate_limited"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "retryAfterSeconds": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not available on this environment: not_implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "not_implemented"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "address.manage",
+        "x-roles": [
+          "owner",
+          "admin",
+          "member"
+        ],
+        "x-kyb-required": true,
+        "x-dashboard-2fa": true,
+        "x-rate-limit-class": "write"
+      }
+    },
+    "/treasury/wallet-addresses/{id}": {
+      "delete": {
+        "operationId": "deleteTreasuryWalletAddressesById",
+        "tags": [
+          "Withdrawals and off-ramps"
+        ],
+        "summary": "Remove a whitelisted wallet",
+        "description": "New withdrawals can no longer use it. One already sent is unaffected. You can add the address again later.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Response"
+          },
+          "401": {
+            "description": "Missing or invalid credentials: unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unauthorized"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed: forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbidden"
+                      ]
+                    },
+                    "action": {
+                      "$ref": "#/components/schemas/IntegratorAction"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "action",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not yours: not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "not_found"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: rate_limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "rate_limited"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "retryAfterSeconds": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not available on this environment: not_implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "not_implemented"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "address.manage",
+        "x-roles": [
+          "owner",
+          "admin",
+          "member"
+        ],
+        "x-rate-limit-class": "write"
       }
     },
     "/treasury/offramp/quote": {
@@ -7049,7 +7628,7 @@
             }
           },
           "403": {
-            "description": "Not allowed: forbidden, kyb_required",
+            "description": "Not allowed: forbidden, kyb_required, mfa_enrollment_required, step_up_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -7059,7 +7638,9 @@
                       "type": "string",
                       "enum": [
                         "forbidden",
-                        "kyb_required"
+                        "kyb_required",
+                        "mfa_enrollment_required",
+                        "step_up_required"
                       ]
                     },
                     "action": {
@@ -7199,6 +7780,7 @@
           "member"
         ],
         "x-kyb-required": true,
+        "x-dashboard-2fa": true,
         "x-rate-limit-class": "write"
       }
     },
@@ -10498,6 +11080,32 @@
               }
             }
           },
+          "403": {
+            "description": "Not allowed: mfa_enrollment_required, step_up_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "mfa_enrollment_required",
+                        "step_up_required"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
           "404": {
             "description": "Not found, or not yours: not_found",
             "content": {
@@ -10601,6 +11209,169 @@
             }
           }
         },
+        "x-dashboard-2fa": true,
+        "x-rate-limit-class": "write"
+      }
+    },
+    "/members/{id}/mfa/reset": {
+      "post": {
+        "operationId": "postMembersByIdMfaReset",
+        "tags": [
+          "Team and API keys"
+        ],
+        "summary": "Reset a member's two-factor authentication",
+        "description": "For a member who has lost their authenticator app. They set it up again the next time they move money from the dashboard. Same role rule as changing a member's role, so an admin's reset needs the organization key.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Response"
+          },
+          "401": {
+            "description": "Missing or invalid credentials: unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "unauthorized"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed: forbidden, mfa_enrollment_required, step_up_required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "forbidden",
+                        "mfa_enrollment_required",
+                        "step_up_required"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found, or not yours: not_found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "not_found"
+                      ]
+                    },
+                    "memberId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "memberId"
+                  ]
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limited: rate_limited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "rate_limited"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "retryAfterSeconds": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ]
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Not available on this environment: not_implemented",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "enum": [
+                        "not_implemented"
+                      ]
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "message"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "x-permission": "member.manage",
+        "x-roles": [
+          "owner",
+          "admin"
+        ],
+        "x-dashboard-2fa": true,
         "x-rate-limit-class": "write"
       }
     },
@@ -10662,7 +11433,7 @@
             }
           },
           "403": {
-            "description": "Not allowed: forbidden",
+            "description": "Not allowed: forbidden, mfa_enrollment_required, step_up_required",
             "content": {
               "application/json": {
                 "schema": {
@@ -10671,7 +11442,9 @@
                     "error": {
                       "type": "string",
                       "enum": [
-                        "forbidden"
+                        "forbidden",
+                        "mfa_enrollment_required",
+                        "step_up_required"
                       ]
                     },
                     "message": {
@@ -10760,6 +11533,7 @@
             }
           }
         },
+        "x-dashboard-2fa": true,
         "x-rate-limit-class": "write"
       }
     },
@@ -13075,6 +13849,25 @@
           "environment"
         ]
       },
+      "MfaStatus": {
+        "type": "object",
+        "properties": {
+          "enrolled": {
+            "type": "boolean"
+          },
+          "pending": {
+            "type": "boolean"
+          },
+          "recoveryCodesRemaining": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "enrolled",
+          "pending",
+          "recoveryCodesRemaining"
+        ]
+      },
       "MoneyJSON": {
         "type": "object",
         "properties": {
@@ -14219,6 +15012,18 @@
               "screenedAt"
             ]
           },
+          "reviewedAt": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "reviewNote": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "createdAt": {
             "type": "string"
           }
@@ -14230,6 +15035,8 @@
           "label",
           "status",
           "screening",
+          "reviewedAt",
+          "reviewNote",
           "createdAt"
         ]
       },

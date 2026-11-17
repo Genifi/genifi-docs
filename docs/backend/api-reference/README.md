@@ -15,6 +15,7 @@ For how the pieces fit together, start with the [guides](../api/conventions.md).
 - **Auth**: `API key` means `Authorization: Bearer <key>`. See [Authentication](../getting-started/authentication.md).
 - **Permission**: the action your role must hold, and which roles hold it. See [Team and API keys](../api/team.md).
 - **KYB**: the endpoint moves money, so your organization must have completed verification. Before that it answers `403 kyb_required`.
+- **Dashboard 2FA**: when a person makes this call from the dashboard, they must have entered a code from their authenticator app in the last five minutes. Otherwise the call answers `403 step_up_required` (or `403 mfa_enrollment_required` before they have set one up). A call made with an API key is never asked.
 - **Rate limit**: which bucket the call draws from (below).
 - **Unknown fields**: some request bodies reject a field they do not know with `400`; the rest ignore it. Each endpoint says which. Check spelling either way: an ignored field is a silently missing one.
 - **Always present**: in a response table, `no` means the field is left out when it does not apply.
@@ -37,9 +38,11 @@ Each team member has a role. An endpoint that names a permission is refused with
 
 | Permission | owner | admin | member | viewer | Endpoints |
 |---|:---:|:---:|:---:|:---:|---|
+| `account.read` | yes | yes | yes | yes | [`GET /treasury/wallet-addresses`](withdrawals.md#get-treasurywallet-addresses) |
+| `address.manage` | yes | yes | yes | no | [`POST /treasury/wallet-addresses`](withdrawals.md#post-treasurywallet-addresses), [`DELETE /treasury/wallet-addresses/:id`](withdrawals.md#delete-treasurywallet-addressesid) |
 | `beneficiary.manage` | yes | yes | yes | no | [`POST /treasury/beneficiaries`](withdrawals.md#post-treasurybeneficiaries) |
 | `member.invite` | yes | yes | no | no | [`POST /members/invitations`](team.md#post-membersinvitations), [`POST /members/:id/invitations`](team.md#post-membersidinvitations) |
-| `member.manage` | yes | yes | no | no | [`PATCH /members/:id`](team.md#patch-membersid), [`DELETE /members/:id`](team.md#delete-membersid) |
+| `member.manage` | yes | yes | no | no | [`PATCH /members/:id`](team.md#patch-membersid), [`DELETE /members/:id`](team.md#delete-membersid), [`POST /members/:id/mfa/reset`](team.md#post-membersidmfareset) |
 | `member.read` | yes | yes | no | no | [`GET /members`](team.md#get-members) |
 | `payment.initiate` | yes | yes | yes | no | [`POST /quotes`](payments.md#post-quotes), [`POST /transactions`](payments.md#post-transactions), [`POST /batches`](batches.md#post-batches) |
 | `recipient.manage` | yes | yes | yes | no | [`POST /recipients`](recipients.md#post-recipients), [`PATCH /recipients/:id`](recipients.md#patch-recipientsid), [`DELETE /recipients/:id`](recipients.md#delete-recipientsid) |
@@ -107,11 +110,14 @@ Each team member has a role. An endpoint that names a permission is refused with
 | Endpoint | |
 |---|---|
 | [`GET /treasury/withdrawals/quote`](withdrawals.md#get-treasurywithdrawalsquote) | Price a USDC withdrawal to your own wallet |
-| [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals) | Withdraw USDC to your own wallet |
+| [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals) | Withdraw USDC to a whitelisted wallet |
 | [`GET /treasury/withdrawals`](withdrawals.md#get-treasurywithdrawals) | List your withdrawals |
 | [`GET /treasury/withdrawals/:withdrawalId`](withdrawals.md#get-treasurywithdrawalswithdrawalid) | A withdrawal's status and timeline |
 | [`POST /treasury/beneficiaries`](withdrawals.md#post-treasurybeneficiaries) | Register a bank account an off-ramp can pay |
 | [`GET /treasury/beneficiaries`](withdrawals.md#get-treasurybeneficiaries) | Your registered beneficiaries |
+| [`GET /treasury/wallet-addresses`](withdrawals.md#get-treasurywallet-addresses) | List your whitelisted wallets |
+| [`POST /treasury/wallet-addresses`](withdrawals.md#post-treasurywallet-addresses) | Whitelist a wallet |
+| [`DELETE /treasury/wallet-addresses/:id`](withdrawals.md#delete-treasurywallet-addressesid) | Remove a whitelisted wallet |
 | [`GET /treasury/offramp/quote`](withdrawals.md#get-treasuryofframpquote) | Price an off-ramp to a beneficiary |
 | [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp) | Pay USDC out to a beneficiary's bank account |
 | [`GET /treasury/offramps`](withdrawals.md#get-treasuryofframps) | List your off-ramps |
@@ -137,6 +143,7 @@ Each team member has a role. An endpoint that names a permission is refused with
 | [`PATCH /members/:id`](team.md#patch-membersid) | Change a member's role |
 | [`DELETE /members/:id`](team.md#delete-membersid) | Revoke a member |
 | [`POST /members/me/api-key`](team.md#post-membersmeapi-key) | Issue your own member API key |
+| [`POST /members/:id/mfa/reset`](team.md#post-membersidmfareset) | Reset a member's two-factor authentication |
 | [`POST /api-keys/rotate`](team.md#post-api-keysrotate) | Rotate the organization API key |
 
 ### [Webhooks](webhooks.md)

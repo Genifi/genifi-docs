@@ -17,8 +17,9 @@ Some errors can come from any endpoint and are not repeated below: `500 internal
 | `compliance_hold` | 403 | [`POST /transactions`](payments.md#post-transactions) |
 | `conflict` | 409 | [`POST /members/invitations`](team.md#post-membersinvitations), [`POST /wallets/:walletId/topup-eurc`](sandbox.md#post-walletswalletidtopup-eurc) |
 | `corridor_not_enabled` | 403 | [`POST /quotes`](payments.md#post-quotes), [`POST /transactions`](payments.md#post-transactions), [`POST /batches`](batches.md#post-batches), [`GET /treasury/onramp/pix/quote`](deposits.md#get-treasuryonramppixquote), [`POST /treasury/onramp/pix`](deposits.md#post-treasuryonramppix) |
+| `duplicate_address` | 409 | [`POST /treasury/wallet-addresses`](withdrawals.md#post-treasurywallet-addresses) |
 | `duplicate_item_ref` | 400 | [`POST /batches`](batches.md#post-batches) |
-| `forbidden` | 403 | 23 endpoints |
+| `forbidden` | 403 | 27 endpoints |
 | `idempotency_key_conflict` | 409 | [`POST /batches`](batches.md#post-batches), [`POST /treasury/onramp`](deposits.md#post-treasuryonramp), [`POST /treasury/onramp/pix`](deposits.md#post-treasuryonramppix), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals), [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp) |
 | `idempotency_key_reused` | 409 | [`POST /treasury/onramp`](deposits.md#post-treasuryonramp), [`POST /treasury/onramp/pix`](deposits.md#post-treasuryonramppix), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals) |
 | `insufficient_funds` | 422 | [`POST /transactions`](payments.md#post-transactions) |
@@ -27,15 +28,16 @@ Some errors can come from any endpoint and are not repeated below: `500 internal
 | `invalid_period` | 400 | [`GET /statements`](statements.md#get-statements) |
 | `invalid_query` | 400 | [`GET /statements`](statements.md#get-statements) |
 | `invalid_send_amount` | 400 | [`POST /batches`](batches.md#post-batches) |
-| `kyb_required` | 403 | [`POST /transactions`](payments.md#post-transactions), [`POST /batches`](batches.md#post-batches), [`GET /treasury/deposit-instructions`](deposits.md#get-treasurydeposit-instructions), [`POST /treasury/onramp`](deposits.md#post-treasuryonramp), [`POST /treasury/onramp/pix`](deposits.md#post-treasuryonramppix), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals), [`POST /treasury/beneficiaries`](withdrawals.md#post-treasurybeneficiaries), [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp), [`POST /treasury/onramps/simulate-wire`](sandbox.md#post-treasuryonrampssimulate-wire), [`POST /wallets/:walletId/topup-eurc`](sandbox.md#post-walletswalletidtopup-eurc) |
+| `kyb_required` | 403 | [`POST /transactions`](payments.md#post-transactions), [`POST /batches`](batches.md#post-batches), [`GET /treasury/deposit-instructions`](deposits.md#get-treasurydeposit-instructions), [`POST /treasury/onramp`](deposits.md#post-treasuryonramp), [`POST /treasury/onramp/pix`](deposits.md#post-treasuryonramppix), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals), [`POST /treasury/beneficiaries`](withdrawals.md#post-treasurybeneficiaries), [`POST /treasury/wallet-addresses`](withdrawals.md#post-treasurywallet-addresses), [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp), [`POST /treasury/onramps/simulate-wire`](sandbox.md#post-treasuryonrampssimulate-wire), [`POST /wallets/:walletId/topup-eurc`](sandbox.md#post-walletswalletidtopup-eurc) |
 | `member_required` | 409 | [`POST /members/me/api-key`](team.md#post-membersmeapi-key), [`GET /notifications/preferences`](notifications.md#get-notificationspreferences), [`PUT /notifications/preferences`](notifications.md#put-notificationspreferences), [`POST /notifications/verify/send`](notifications.md#post-notificationsverifysend) |
+| `mfa_enrollment_required` | 403 | [`POST /transactions`](payments.md#post-transactions), [`POST /batches`](batches.md#post-batches), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals), [`POST /treasury/beneficiaries`](withdrawals.md#post-treasurybeneficiaries), [`POST /treasury/wallet-addresses`](withdrawals.md#post-treasurywallet-addresses), [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp), [`POST /members/me/api-key`](team.md#post-membersmeapi-key), [`POST /members/:id/mfa/reset`](team.md#post-membersidmfareset), [`POST /api-keys/rotate`](team.md#post-api-keysrotate) |
 | `no_home_wallet` | 422 | [`POST /transactions`](payments.md#post-transactions), [`POST /batches`](batches.md#post-batches), [`POST /treasury/onramp`](deposits.md#post-treasuryonramp), [`GET /treasury/crypto-deposit`](deposits.md#get-treasurycrypto-deposit), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals) |
 | `no_member_email` | 409 | [`POST /notifications/verify/send`](notifications.md#post-notificationsverifysend) |
 | `no_route_for_chain` | 422 | [`POST /quotes`](payments.md#post-quotes) |
-| `not_found` | 404 | 16 endpoints |
+| `not_found` | 404 | 18 endpoints |
 | `not_home_chain` | 422 | [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp) |
 | `not_home_wallet` | 422 | [`POST /quotes`](payments.md#post-quotes), [`POST /transactions`](payments.md#post-transactions), [`POST /batches`](batches.md#post-batches) |
-| `not_implemented` | 501 | 46 endpoints |
+| `not_implemented` | 501 | 50 endpoints |
 | `not_simulatable` | 409 | [`POST /treasury/onramp/:onRampId/simulate-payment`](sandbox.md#post-treasuryonramponrampidsimulate-payment) |
 | `pix_onramp_unavailable` | 422 | [`POST /treasury/onramp/pix`](deposits.md#post-treasuryonramppix) |
 | `quote_already_used` | 422 | [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp) |
@@ -43,10 +45,13 @@ Some errors can come from any endpoint and are not repeated below: `500 internal
 | `quote_mismatch` | 422 | [`POST /transactions`](payments.md#post-transactions), [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp) |
 | `quote_not_found` | 422 | [`POST /transactions`](payments.md#post-transactions), [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp) |
 | `quote_unavailable` | 422 | [`POST /quotes`](payments.md#post-quotes), [`GET /treasury/withdrawals/quote`](withdrawals.md#get-treasurywithdrawalsquote), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals) |
-| `rate_limited` | 429 | 58 endpoints |
-| `unauthorized` | 401 | 58 endpoints |
+| `rate_limited` | 429 | 62 endpoints |
+| `step_up_required` | 403 | [`POST /transactions`](payments.md#post-transactions), [`POST /batches`](batches.md#post-batches), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals), [`POST /treasury/beneficiaries`](withdrawals.md#post-treasurybeneficiaries), [`POST /treasury/wallet-addresses`](withdrawals.md#post-treasurywallet-addresses), [`POST /treasury/offramp`](withdrawals.md#post-treasuryofframp), [`POST /members/me/api-key`](team.md#post-membersmeapi-key), [`POST /members/:id/mfa/reset`](team.md#post-membersidmfareset), [`POST /api-keys/rotate`](team.md#post-api-keysrotate) |
+| `unauthorized` | 401 | 62 endpoints |
 | `unknown_currency` | 400 | [`POST /treasury/onramps/simulate-wire`](sandbox.md#post-treasuryonrampssimulate-wire) |
 | `unknown_recipient` | 400 | [`POST /batches`](batches.md#post-batches) |
-| `unsupported_network` | 422 | [`GET /treasury/withdrawals/quote`](withdrawals.md#get-treasurywithdrawalsquote), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals) |
-| `validation` | 400 | 28 endpoints |
+| `unsupported_network` | 422 | [`GET /treasury/withdrawals/quote`](withdrawals.md#get-treasurywithdrawalsquote), [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals), [`POST /treasury/wallet-addresses`](withdrawals.md#post-treasurywallet-addresses) |
+| `validation` | 400 | 29 endpoints |
 | `wallet_chain_unknown` | 422 | [`POST /transactions`](payments.md#post-transactions), [`POST /batches`](batches.md#post-batches) |
+| `wallet_not_approved` | 422 | [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals) |
+| `wallet_not_whitelisted` | 422 | [`POST /treasury/withdrawals`](withdrawals.md#post-treasurywithdrawals) |

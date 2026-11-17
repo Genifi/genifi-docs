@@ -4,7 +4,7 @@ Two ways to take money out of your JET balance:
 
 | Way out | Arrives as | Start with |
 |---|---|---|
-| [Withdrawal](#withdrawals) | USDC, in a wallet **you** control | [`GET /treasury/withdrawals/quote`](#get-treasurywithdrawalsquote) |
+| [Withdrawal](#withdrawals) | USDC, in a wallet **you** whitelisted | [`POST /treasury/wallet-addresses`](#post-treasurywallet-addresses) |
 | [Off-ramp](#off-ramps) | Fiat, in a bank account you registered | [`POST /treasury/beneficiaries`](#post-treasurybeneficiaries) |
 
 Both are funded from your [home wallet](wallets-and-accounts.md), both need the
@@ -17,15 +17,70 @@ To pay **someone else** in their local currency, send a
 
 ## Withdrawals
 
-Sends USDC from your balance to an address you give, on the network you choose.
-This and [USDC deposits](treasury.md#usdc-deposits) are the only places you name
-a network.
+Sends USDC from your balance to a wallet on your **whitelist**. A withdrawal
+names the whitelisted wallet by ID and never carries an address, so money can
+only go where you registered it first. JET reviews every wallet you add before
+money can be sent to it, so add a wallet ahead of when you need it. Adding a wallet and naming its network is
+the one place you choose where USDC goes; this and
+[USDC deposits](treasury.md#usdc-deposits) are the only places you name a network.
 
 !!! danger "An on-chain send cannot be reversed"
 
-    Check the address, and check that it is on the network you name. USDC sent to
-    the right address on the wrong network, or to a mistyped address, cannot be
-    recovered by JET or anyone else.
+    Check the address when you whitelist it, and check that it is on the network
+    you name. USDC sent to the right address on the wrong network, or to a
+    mistyped address, cannot be recovered by JET or anyone else.
+
+### POST /treasury/wallet-addresses
+
+=== "Request"
+
+    ```bash
+    curl -X POST "$JET_API/treasury/wallet-addresses" \
+      -H "Authorization: Bearer $JET_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "chain": "arbitrum",
+        "address": "0x8f3C…a91B",
+        "label": "Treasury cold wallet"
+      }'
+    ```
+
+=== "201 Created"
+
+    ```json
+    {
+      "id": "3c1f6a2e-9b7d-4c55-8e0a-2f6d1b9a7c44",
+      "chain": "arbitrum",
+      "address": "0x8f3c…a91b",
+      "label": "Treasury cold wallet",
+      "status": "pending_review",
+      "screening": {
+        "provider": "simulated",
+        "verdict": "allowed",
+        "screenedAt": "2026-08-21T10:00:00.000Z"
+      },
+      "reviewedAt": null,
+      "reviewNote": null,
+      "createdAt": "2026-08-21T10:00:00.000Z"
+    }
+    ```
+
+Needs the `address.manage` permission. The address is stored lower-cased, and the
+same address can be listed once per network.
+
+Every new wallet starts as `pending_review`. JET checks it before money can be sent
+to it, so a wallet added with a leaked API key cannot receive a withdrawal straight
+away. In the sandbox, wallets are approved as soon as you add them.
+
+| `status` | Can receive a withdrawal? |
+|---|---|
+| `pending_review` | Not yet. JET is reviewing it |
+| `approved` | Yes |
+| `rejected` | No. `reviewNote` says why. It failed address screening, or JET rejected or revoked it |
+
+`GET /treasury/wallet-addresses` lists your whitelist, and
+`DELETE /treasury/wallet-addresses/:id` removes an entry. A withdrawal already
+sent is unaffected by a removal.
 
 ### GET /treasury/withdrawals/quote
 
@@ -72,8 +127,7 @@ use are the ones listed by
       -d '{
         "idempotencyKey": "wd-2026-08-21-a",
         "amount": { "amount": "250.00", "currency": "USDC" },
-        "chain": "arbitrum",
-        "toAddress": "0x8f3C…a91B"
+        "walletAddressId": "3c1f6a2e-9b7d-4c55-8e0a-2f6d1b9a7c44"
       }'
     ```
 
@@ -84,16 +138,31 @@ use are the ones listed by
       "withdrawalId": "wd-2026-08-21-a",
       "amount": { "amount": "250000000", "currency": "USDC", "scale": 6 },
       "network": "arbitrum",
+      "walletAddressId": "3c1f6a2e-9b7d-4c55-8e0a-2f6d1b9a7c44",
       "fee": { "amount": "180000", "currency": "USDC", "scale": 6 },
       "net": { "amount": "249820000", "currency": "USDC", "scale": 6 }
     }
     ```
 
+=== "422 Not whitelisted"
+
+    ```json
+    {
+      "error": "wallet_not_whitelisted",
+      "message": "that walletAddressId is not on your whitelist: add the wallet with POST /treasury/wallet-addresses, then withdraw to its id"
+    }
+    ```
+
+- **The address and network come from the whitelist entry.** The request carries
+  neither, and a request that still sends `toAddress` or `chain` is refused with
+  `400`. An entry that is `pending_review` or `rejected` is
+  `422 wallet_not_approved`, with its `status` in the body.
+
 - **It is re-priced when you send it**, with no quote ID. The fee includes headroom
   for gas moving between your quote and the send, and the response carries the
   figure that applied.
 - **`idempotencyKey` becomes the withdrawal ID.** Retrying the same request is
-  safe. Reusing the key with a different amount, network or address is
+  safe. Reusing the key with a different amount or wallet is
   `409 idempotency_key_reused`; a key already used for someone else's withdrawal is
   `409 idempotency_key_conflict`.
 

@@ -104,6 +104,14 @@ One of: `"owner"`, `"admin"`, `"member"`, `"viewer"`
 | `canRedeem` | boolean | yes |  |
 | `environment` | string | yes |  |
 
+## MfaStatus
+
+| Field | Type | Always present | Notes |
+|---|---|:---:|---|
+| `enrolled` | boolean | yes |  |
+| `pending` | boolean | yes |  |
+| `recoveryCodesRemaining` | number | yes |  |
+
 ## MoneyJSON
 
 | Field | Type | Always present | Notes |
@@ -443,6 +451,8 @@ One of: `"wallet"`, `"bank"`
 | `label` | string | yes |  |
 | `status` | string | yes |  |
 | `screening` | object or null | yes |  |
+| `reviewedAt` | string or null | yes |  |
+| `reviewNote` | string or null | yes |  |
 | `createdAt` | string | yes |  |
 
 ## WithdrawalSummary

@@ -70,7 +70,7 @@ Prices a payment without starting one. Returns a single-use `quoteId` that locks
 
 Send a payment.
 
-**Auth:** API key · **Permission:** `payment.initiate` (owner, admin, member) · **KYB:** approved organizations only · **Rate limit:** `initiate`
+**Auth:** API key · **Permission:** `payment.initiate` (owner, admin, member) · **KYB:** approved organizations only · **Dashboard 2FA:** asked in the dashboard, never of an API key · **Rate limit:** `initiate`
 
 Starts a durable payment and answers `202` straight away. Your `idempotencyKey` becomes the transaction ID: retrying the same request never pays twice. Funded from your home wallet. Follow it with `GET /transactions/:id` or webhooks.
 
@@ -122,7 +122,7 @@ Starts a durable payment and answers `202` straight away. Your `idempotencyKey` 
 | `202` | Accepted: started, not finished |  |
 | `400` | Invalid request | `beneficiary_incomplete`, `validation` |
 | `401` | Missing or invalid credentials | `unauthorized` |
-| `403` | Not allowed | `compliance_hold`, `corridor_not_enabled`, `forbidden`, `kyb_required` |
+| `403` | Not allowed | `compliance_hold`, `corridor_not_enabled`, `forbidden`, `kyb_required`, `mfa_enrollment_required`, `step_up_required` |
 | `422` | Understood, but cannot be done as asked | `ambiguous_home_wallet`, `insufficient_funds`, `no_home_wallet`, `not_home_wallet`, `quote_expired`, `quote_mismatch`, `quote_not_found`, `wallet_chain_unknown` |
 | `429` | Rate limited | `rate_limited` |
 

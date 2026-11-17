@@ -17,6 +17,7 @@ Members, roles, invitations and keys.
 | [`PATCH /members/:id`](#patch-membersid) | Change a member's role |
 | [`DELETE /members/:id`](#delete-membersid) | Revoke a member |
 | [`POST /members/me/api-key`](#post-membersmeapi-key) | Issue your own member API key |
+| [`POST /members/:id/mfa/reset`](#post-membersidmfareset) | Reset a member's two-factor authentication |
 | [`POST /api-keys/rotate`](#post-api-keysrotate) | Rotate the organization API key |
 
 ## GET /members
@@ -270,7 +271,7 @@ Revoke a member.
 
 Issue your own member API key.
 
-**Auth:** API key · **Rate limit:** `write`
+**Auth:** API key · **Dashboard 2FA:** asked in the dashboard, never of an API key · **Rate limit:** `write`
 
 For a signed-in member: mints a key carrying your existing role and revokes your previous one. Shown **once**. Not for the organization key; that is `POST /api-keys/rotate`.
 
@@ -282,6 +283,7 @@ For a signed-in member: mints a key carrying your existing role and revokes your
 |---|---|---|
 | `200` | OK |  |
 | `401` | Missing or invalid credentials | `unauthorized` |
+| `403` | Not allowed | `mfa_enrollment_required`, `step_up_required` |
 | `404` | Not found, or not yours | `not_found` |
 | `409` | Conflict | `member_required` |
 | `429` | Rate limited | `rate_limited` |
@@ -303,11 +305,36 @@ For a signed-in member: mints a key carrying your existing role and revokes your
 | `member.createdAt` | string | yes |  |
 | `rotatedAt` | string | yes |  |
 
+## POST /members/:id/mfa/reset
+
+Reset a member's two-factor authentication.
+
+**Auth:** API key · **Permission:** `member.manage` (owner, admin) · **Dashboard 2FA:** asked in the dashboard, never of an API key · **Rate limit:** `write`
+
+For a member who has lost their authenticator app. They set it up again the next time they move money from the dashboard. Same role rule as changing a member's role, so an admin's reset needs the organization key.
+
+**Path parameters**
+
+| Name | Type |
+|---|---|
+| `id` | string |
+
+**Responses**
+
+| Status | Meaning | `error` codes |
+|---|---|---|
+| `204` |  |  |
+| `401` | Missing or invalid credentials | `unauthorized` |
+| `403` | Not allowed | `forbidden`, `mfa_enrollment_required`, `step_up_required` |
+| `404` | Not found, or not yours | `not_found` |
+| `429` | Rate limited | `rate_limited` |
+| `501` | Not available on this environment | `not_implemented` |
+
 ## POST /api-keys/rotate
 
 Rotate the organization API key.
 
-**Auth:** API key · **Rate limit:** `write`
+**Auth:** API key · **Dashboard 2FA:** asked in the dashboard, never of an API key · **Rate limit:** `write`
 
 Owner only, with the organization key. The new key is returned **once** and the key that made this request stops working immediately.
 
@@ -319,7 +346,7 @@ Owner only, with the organization key. The new key is returned **once** and the 
 |---|---|---|
 | `200` | OK |  |
 | `401` | Missing or invalid credentials | `unauthorized` |
-| `403` | Not allowed | `forbidden` |
+| `403` | Not allowed | `forbidden`, `mfa_enrollment_required`, `step_up_required` |
 | `404` | Not found, or not yours | `not_found` |
 | `429` | Rate limited | `rate_limited` |
 | `501` | Not available on this environment | `not_implemented` |
